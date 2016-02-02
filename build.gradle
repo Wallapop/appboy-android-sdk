@@ -18,7 +18,7 @@ subprojects {
 
   group = 'com.appboy'
   version = '1.11.2'
-  String wallapopVersion = 'w1.6'
+  String wallapopVersion = 'w1.7'
   version = "$wallapopVersion-$version"
 
   apply plugin: 'android-sdk-manager'

@@ -42,7 +42,7 @@ public class AppboyWebViewActivity extends AppboyBaseActivity {
     // JavaScript is enabled by default to support a larger number of web pages. If JavaScript support is not
     // necessary, then it should be disabled.
     webSettings.setJavaScriptEnabled(true);
-    webSettings.setAllowFileAccess(false);
+    webSettings.setAllowFileAccess(true);
     // Plugin support is disabled by default. If plugins, such as flash, are required, change the PluginState.
     webSettings.setPluginState(WebSettings.PluginState.OFF);
     setZoomSafe(webSettings);
