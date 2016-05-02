@@ -6,7 +6,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-
 import com.appboy.Constants;
 import com.appboy.models.cards.BannerImageCard;
 import com.appboy.models.cards.CaptionedImageCard;
@@ -15,10 +14,10 @@ import com.appboy.models.cards.CrossPromotionSmallCard;
 import com.appboy.models.cards.ShortNewsCard;
 import com.appboy.models.cards.TextAnnouncementCard;
 import com.appboy.support.AppboyLogger;
+import com.appboy.ui.R;
 import com.appboy.ui.configuration.XmlUIConfigurationProvider;
 import com.appboy.ui.widget.BaseCardView;
 import com.appboy.ui.widget.DefaultCardView;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;

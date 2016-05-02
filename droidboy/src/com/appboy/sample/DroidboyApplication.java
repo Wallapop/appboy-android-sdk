@@ -12,7 +12,6 @@ import com.appboy.Constants;
 import com.appboy.sample.util.EmulatorDetectionUtils;
 import com.appboy.sample.util.SharedPrefsUtil;
 import com.facebook.drawee.backends.pipeline.Fresco;
-import com.facebook.stetho.Stetho;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -53,14 +52,6 @@ public class DroidboyApplication extends Application {
     Appboy.setCustomAppboyNotificationFactory(new DroidboyNotificationFactory());
 
     Fresco.initialize(getApplicationContext());
-
-    Stetho.initialize(
-            Stetho.newInitializerBuilder(this)
-                    .enableDumpapp(
-                            Stetho.defaultDumperPluginsProvider(this))
-                    .enableWebKitInspector(
-                    Stetho.defaultInspectorModulesProvider(this))
-                    .build());
   }
 
   private void activateStrictMode() {
