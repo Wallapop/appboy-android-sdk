@@ -1,7 +1,6 @@
 package com.appboy.unity.utils;
 
 import android.util.Log;
-
 import com.appboy.Constants;
 import com.appboy.models.IInAppMessage;
 import com.appboy.support.StringUtils;

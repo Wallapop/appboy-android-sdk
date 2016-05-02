@@ -1,9 +1,7 @@
 package com.appboy.wear.models;
 
 import android.util.Log;
-
 import com.appboy.wear.Constants;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 

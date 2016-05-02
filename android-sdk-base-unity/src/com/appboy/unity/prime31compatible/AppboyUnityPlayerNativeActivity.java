@@ -2,7 +2,6 @@ package com.appboy.unity.prime31compatible;
 
 import android.content.Intent;
 import android.os.Bundle;
-
 import com.appboy.unity.AppboyUnityPlayerNativeActivityWrapper;
 import com.prime31.UnityPlayerNativeActivity;
 

@@ -2,7 +2,6 @@ package com.appboy.unity;
 
 import android.app.Activity;
 import android.content.Intent;
-
 import com.appboy.Constants;
 import com.appboy.models.IInAppMessage;
 import com.appboy.models.MessageButton;

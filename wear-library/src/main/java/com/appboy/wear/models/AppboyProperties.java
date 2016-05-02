@@ -1,8 +1,7 @@
 package com.appboy.wear.models;
 
+import java.util.Date;
 import org.json.JSONObject;
-
-import java.util.Date;//NOPMD
 
 /**
  * This class acts as a wrapper for your JSONObjects. See the specification for AppboyProperties in the

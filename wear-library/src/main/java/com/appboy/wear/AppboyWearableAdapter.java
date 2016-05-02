@@ -3,7 +3,6 @@ package com.appboy.wear;
 import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
-
 import com.appboy.wear.communication.WearCommunicationUtils;
 import com.appboy.wear.enums.Gender;
 import com.appboy.wear.enums.Month;
@@ -20,7 +19,6 @@ import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
-
 import java.math.BigDecimal;
 
 /**

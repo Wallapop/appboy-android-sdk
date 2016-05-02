@@ -5,15 +5,12 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
-
 import com.appboy.wear.AppboyWearableAdapter;
 import com.appboy.wear.enums.WearScreenShape;
 import com.appboy.wear.models.AppboyProperties;
-
+import java.math.BigDecimal;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.math.BigDecimal;
 
 public class WearboyActivity extends Activity implements View.OnClickListener {
   private static final String TAG = WearboyActivity.class.getName();

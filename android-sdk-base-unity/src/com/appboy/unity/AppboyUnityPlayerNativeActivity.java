@@ -2,7 +2,6 @@ package com.appboy.unity;
 
 import android.content.Intent;
 import android.os.Bundle;
-
 import com.unity3d.player.UnityPlayerNativeActivity;
 
 /**

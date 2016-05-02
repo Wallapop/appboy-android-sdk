@@ -1,7 +1,6 @@
 package com.appboy.unity.configuration;
 
 import android.content.Context;
-
 import com.appboy.configuration.CachedConfigurationProvider;
 
 public class UnityConfigurationProvider extends CachedConfigurationProvider {

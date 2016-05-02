@@ -1,7 +1,6 @@
 package com.appboy.unity;
 
 import android.util.Log;
-
 import com.appboy.Constants;
 import com.appboy.events.FeedUpdatedEvent;
 import com.appboy.events.IEventSubscriber;
@@ -12,12 +11,10 @@ import com.appboy.support.StringUtils;
 import com.appboy.unity.configuration.UnityConfigurationProvider;
 import com.appboy.unity.utils.MessagingUtils;
 import com.unity3d.player.UnityPlayer;
-
+import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.util.List;
 
 public class EventSubscriberFactory {
   private static final String TAG = String.format("%s.%s", Constants.APPBOY_LOG_TAG_PREFIX, EventSubscriberFactory.class.getName());

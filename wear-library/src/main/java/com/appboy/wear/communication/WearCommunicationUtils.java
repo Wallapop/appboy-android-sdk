@@ -6,7 +6,6 @@ import com.appboy.wear.enums.WearSdkActions;
 import com.appboy.wear.models.AppboyProperties;
 import com.appboy.wear.models.WearDevice;
 import com.google.android.gms.wearable.DataMap;
-
 import java.math.BigDecimal;
 
 /**

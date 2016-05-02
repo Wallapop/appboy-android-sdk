@@ -3,10 +3,8 @@ package com.appboy.chinapush;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
-
 import com.appboy.Appboy;
 import com.baidu.android.pushservice.PushMessageReceiver;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;

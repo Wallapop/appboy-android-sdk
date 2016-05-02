@@ -8,7 +8,6 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
-
 import com.appboy.Constants;
 import com.appboy.push.AppboyNotificationUtils;
 import com.appboy.support.StringUtils;
