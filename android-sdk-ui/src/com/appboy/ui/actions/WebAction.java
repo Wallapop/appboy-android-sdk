@@ -4,11 +4,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
+import com.appboy.support.AppboyFileUtils;
 import com.appboy.ui.AppboyWebViewActivity;
 import com.appboy.ui.R;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -17,8 +16,6 @@ import java.util.List;
 public final class WebAction implements IAction {
   private final String mTargetUrl;
   private final Bundle mExtras;
-  private static final List<String> sSupportedSchemes = Collections.unmodifiableList(
-      Arrays.asList("http", "https", "ftp", "ftps", "about", "javascript"));
 
   public WebAction(String targetUrl) {
     this(targetUrl, null);
@@ -39,7 +36,7 @@ public final class WebAction implements IAction {
   }
 
   public static List<String> getSupportedSchemes() {
-    return sSupportedSchemes;
+    return AppboyFileUtils.REMOTE_SCHEMES;
   }
 
   public static String[] getUnsupportedAuthority(Context context) {

@@ -12,10 +12,10 @@ import android.widget.TextView;
 
 import com.appboy.Constants;
 import com.appboy.models.cards.CrossPromotionSmallCard;
+import com.appboy.support.StringUtils;
 import com.appboy.ui.R;
 import com.appboy.ui.actions.GooglePlayAppDetailsAction;
 import com.appboy.ui.actions.IAction;
-import com.appboy.ui.support.StringUtils;
 import com.facebook.drawee.view.SimpleDraweeView;
 
 import java.text.NumberFormat;
@@ -96,37 +96,37 @@ public class CrossPromotionSmallCardView extends BaseCardView<CrossPromotionSmal
         return R.layout.com_appboy_cross_promotion_small_card;
     }
 
-    @Override
-    public void onSetCard(final CrossPromotionSmallCard card) {
-        mTitle.setText(card.getTitle());
-        if (card.getSubtitle() == null || card.getSubtitle().toUpperCase(Locale.getDefault()).equals("NULL")) {
-            mSubtitle.setVisibility(View.GONE);
-        } else {
-            mSubtitle.setText(card.getSubtitle().toUpperCase(Locale.getDefault()));
-        }
-        mCaption.setText(card.getCaption().toUpperCase(Locale.getDefault()));
-        // Kindle items do not have ratings, so they are set to 0
-        if (card.getRating() <= 0) {
-            mReviewCount.setVisibility(View.GONE);
-            mStarRating.setVisibility(View.GONE);
-        } else {
-            mReviewCount.setText(String.format("(%s)", NumberFormat.getInstance().format(card.getReviewCount())));
-            mStarRating.setRating((float) card.getRating());
-        }
-        // If the server sends down the display price, use that,
-        if (!StringUtils.isNullOrBlank(card.getDisplayPrice())) {
-            mPrice.setText(card.getDisplayPrice());
-        } else {
-            // else, format client-side.
-            mPrice.setText(getPriceString(card.getPrice()));
-        }
-        mPriceAction = new GooglePlayAppDetailsAction(card.getPackage(), false, card.getAppStore(), card.getKindleId());
-        mPrice.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                handleCardClick(mContext, card, mPriceAction, TAG);
-            }
-        });
+  @Override
+  public void onSetCard(final CrossPromotionSmallCard card) {
+    mTitle.setText(card.getTitle());
+    if (card.getSubtitle() == null || card.getSubtitle().toUpperCase(Locale.getDefault()).equals("NULL")) {
+      mSubtitle.setVisibility(View.GONE);
+    } else {
+      mSubtitle.setText(card.getSubtitle().toUpperCase(Locale.getDefault()));
+    }
+    mCaption.setText(card.getCaption().toUpperCase(Locale.getDefault()));
+    // Kindle items do not have ratings, so they are set to 0
+    if (card.getRating() <= 0) {
+      mReviewCount.setVisibility(View.GONE);
+      mStarRating.setVisibility(View.GONE);
+    } else {
+      mReviewCount.setText(String.format("(%s)", NumberFormat.getInstance().format(card.getReviewCount())));
+      mStarRating.setRating((float) card.getRating());
+    }
+    // If the server sends down the display price, use that,
+    if (!StringUtils.isNullOrBlank(card.getDisplayPrice())) {
+      mPrice.setText(card.getDisplayPrice());
+    } else {
+    // else, format client-side.
+      mPrice.setText(getPriceString(card.getPrice()));
+    }
+    mPriceAction = new GooglePlayAppDetailsAction(card.getPackage(), false,  card.getAppStore(), card.getKindleId());
+    mPrice.setOnClickListener(new OnClickListener() {
+      @Override
+      public void onClick(View view) {
+        handleCardClick(mContext,card, mPriceAction, TAG);
+      }
+    });
 
         if (canUseFresco()) {
             setSimpleDraweeToUrl(mDrawee, card.getImageUrl(), mAspectRatio, true);

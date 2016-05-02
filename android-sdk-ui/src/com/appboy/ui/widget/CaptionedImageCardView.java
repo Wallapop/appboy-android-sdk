@@ -87,24 +87,24 @@ public class CaptionedImageCardView extends BaseCardView<CaptionedImageCard> {
         return R.layout.com_appboy_captioned_image_card;
     }
 
-    @Override
-    public void onSetCard(final CaptionedImageCard card) {
-        mTitle.setText(card.getTitle());
-        mDescription.setText(card.getDescription());
-        setOptionalTextView(mDomain, card.getDomain());
-        mCardAction = ActionFactory.createUriAction(getContext(), card.getUrl());
-        boolean respectAspectRatio = false;
-        if (card.getAspectRatio() != 0f) {
-            mAspectRatio = card.getAspectRatio();
-            respectAspectRatio = true;
-        }
+  @Override
+  public void onSetCard(final CaptionedImageCard card) {
+    mTitle.setText(card.getTitle());
+    mDescription.setText(card.getDescription());
+    setOptionalTextView(mDomain, card.getDomain());
+    mCardAction = ActionFactory.createUriAction(getContext(), card.getUrl());
+    boolean respectAspectRatio = false;
+    if (card.getAspectRatio() != 0f) {
+      mAspectRatio = card.getAspectRatio();
+      respectAspectRatio = true;
+    }
 
-        setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                handleCardClick(mContext, card, mCardAction, TAG);
-            }
-        });
+    setOnClickListener(new OnClickListener() {
+      @Override
+      public void onClick(View view) {
+        handleCardClick(mContext, card, mCardAction, TAG);
+      }
+    });
 
         if (canUseFresco()) {
             setSimpleDraweeToUrl(mDrawee, card.getImageUrl(), mAspectRatio, respectAspectRatio);

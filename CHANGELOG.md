@@ -1,3 +1,47 @@
+## 1.13.4
+- Adds ability to set push and email subscription state from Droidboy.
+- Open sources Appboy's Unity plugin library code.
+
+## 1.13.3
+- Updates Baidu push service jar from v4.3.0.4 to v4.6.2.38.
+- Analytics are now logged for in-app messages and in-app message buttons with 'NONE' click actions.
+- Adds the ability to set the large notification icon from within the GCM payload.
+- Fixes a bug where triggered HTML in-app messages would not always send button analytics.
+- Updates the Droidboy sample app to use material design.
+- Updates the Hello Appboy sample app to use Proguard.
+- Introduces `consumerProguardFiles` automatic Proguard configuration.
+
+## 1.13.2
+- Fixes bug where passing a JSONObject with multiple invalid keys or values to the AppboyProperties
+  constructor would cause a ConcurrentModificationException.
+
+## 1.13.1
+- Adds handling to a case where certain devices were returning null Resources for GCM BroadcastReceiver onReceive contexts.
+
+## 1.13.0
+- Adds support for action-based, locally triggered in-app messages. In-app messages are now sent to the device at session start with associated trigger events. The SDK will display in-app messages in near real-time when the trigger event associated with a message occurs. Trigger events can be app opens, push opens, purchases, and custom events. 
+- Deprecates the old system of requesting in-app message display, now collectively known as 'original' in-app messaging, where messages were limited to displaying at app start. 
+- Removes Iab billing example code from Droidboy.
+
+## 1.12.0
+- Removes the deprecated method Appboy.requestSlideupRefresh().  Please use Appboy.requestInAppMessageRefresh() instead.
+- Removes the deprecated class AppboySlideupManager.  Please use AppboyInAppMessageManager instead.
+- HTML in-app message WebViews now use wide viewport mode and load pages in overview mode.
+- Removes the partial duplicate of the private library's StringUtils from the ui project.
+- Moves AppboyImageUtils to the private library with an updated api.
+- Moves WebContentUtils to the private library.
+- Renames IInAppMessageHtmlBase to InAppMessageHtmlBase.
+- Method count of the private Appboy library has decreased by over 600 since version 1.11.0.
+
+## 1.11.2
+- Fixes bug where large and small icons both rendered at full size in notification remoteviews for 
+  Honeycomb/ICS.  Now, if a large icon is available, only the large icon is shown.  Otherwise, the 
+  small icon is used.
+- Fixes bug where push open logs were under-reported under certain device conditions.
+
+## 1.11.1
+- Placeholder for Unity release.
+
 ## 1.11.0
 - Makes the WebView background for HTML in-app messages transparent.  Ensure your HTML in-app messages expect a transparent background.
 - Updates Google Play Services from to 7.5.0 to 8.3.0 and Play Services Support from 1.2.0 to 1.3.0.
@@ -5,6 +49,7 @@
 - Updates Appboy WebView to support redirects to deep links and enables DOM storage.
 - Adds a method for setting modal frame color on in-app messages, no longer displays in-app messages on asset download failure and adds robustness.
 - Adds deep link support to AppboyUnityGcmReceiver.
+
 
 ## 1.10.3
 - Adds Android M Support.  Under the runtime permissions model introduced in Android M, location permission must be explicitly obtained from the end user by the integrating app.  Once location permission is granted, Appboy will resume location data collection on the subsequent session.
@@ -29,7 +74,8 @@
 
 ## 1.9.0
 - Removes the need for integrating client apps to log push notifications inside their activity code.  **Please remove all calls to `Appboy.logPushNotificationOpened()` from your app as they are now all handled automatically by Appboy.  Otherwise, push opens will be incorrectly logged twice.**
-- Adds support for analytics from Android Wear devices. If using wear, you must add the line `-dontwarn com.google.android.gms.**` to your proguard config file if proguarding your app.
+- Adds support for analytics from Android Wear devices. 
+- All users must add the line `-dontwarn com.google.android.gms.**` to their proguard config file if using proguard.
 - Adds support for displaying notification action buttons sent from the Appboy dashboard.  To allow image sharing on social networks, add the `<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />` permission to your `AndroidManifest.xml`.
 - Adds delegate to `FeedbackFinishedListener` enabling modification of feedback messages before they are sent to Appboy.  Also adds a disposition parameter to `onFeedbackFinished()`.
 - Adds support for GIF images in the News Feed and in In-App Messages via the Facebook Fresco image library (version 0.6.1) as a provided library. If found in the parent app (your app),
@@ -64,7 +110,7 @@
 - Blacklisted custom attributes may no longer be incremented.
 
 ## 1.7.2
-- Removes DownloadUtils.java from com.appboy.ui.support.  The downloadImageBitmap function has been moved to com.appboy.AppboyImageUtils.
+- Removes DownloadUtils.java from com.appboy.ui.support.  The downloadImageBitmap function has been moved to com.appboy.support.AppboyImageUtils.
 - Introduces AppboyNotificationUtils.getAppboyExtrasWithoutPreprocessing(Bundle notificationExtras) to parse Appboy extras from GCM/ADM intent extras directly
   rather than requiring Appboy extras to be parsed into a Bundle before being passed into AppboyNotificationUtils.getAppboyExtras(Bundle notificationExtras).
 - Adds the ability to send and retrieve extra key-value pairs via a News Feed card.
@@ -108,7 +154,7 @@
   use of this permissions is recommended so that pre-Jelly Bean devices can register with GCM.
 - android.permission.WAKE_LOCK is no longer required during initial GCM registration.  However, use of this permissions is recommended to allow
   notifications to wake the screen and engage users when the notification arrives.
-- No longer overwrite messages in the notification center based on collapse key (gcm) or consolidation key (adm).  Instead, overwrite based on message
+- No longer overwrite messages in the notification center based on collapse key (GCM) or consolidation key (ADM).  Instead, overwrite based on message
   title and message alert, or, if specified, a custom notification id.
 - Fixes News Feed swipe-refresh CalledFromWrongThreadException.
 - Updates Droidboy to use the most recent Google IAB helper classes.
@@ -186,7 +232,7 @@
 - Added swipe to refresh functionality to the newsfeed. The swipe to refresh colors are configurable in
   the colors xml file.
 - Added configurable session timeout to the appboy xml.
-- Added images to gcm push notifications.
+- Added images to GCM push notifications.
 - Removed click logging on slideups when action is None.
 - Added email and push notification subscription types for a user. Subscription types are explicitly opted in, subscribed, and unsubscribed. The old email boolean subscribe method has been deprecated.
 - The feedback form now displays error popups to the user on invalid fields.

@@ -2,15 +2,13 @@
 
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/com_appboy_feedback_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
     <LinearLayout
         android:id="@+id/inappmessage_buttons"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:background="@color/gray">
+        android:layout_alignParentBottom="true">
         <Button
             android:id="@+id/create_and_add_inappmessage_button"
             android:text="@string/create_and_add_inappmessage"
