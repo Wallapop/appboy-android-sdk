@@ -17,7 +17,7 @@ subprojects {
 
   group = 'com.appboy'
   version = '1.13.4'
-  String wallapopVersion = 'w1.6'
+  String wallapopVersion = 'w1.7'
   version = "$wallapopVersion-$version"
 
 }
