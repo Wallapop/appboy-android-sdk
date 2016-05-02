@@ -18,7 +18,7 @@ public class AppboyNotificationFactory implements IAppboyNotificationFactory {
    */
   public static AppboyNotificationFactory getInstance() {
     if (sInstance == null) {
-      synchronized(AppboyNotificationFactory.class) {
+      synchronized (AppboyNotificationFactory.class) {
         if (sInstance == null) {
           sInstance = new AppboyNotificationFactory();
         }
@@ -56,7 +56,7 @@ public class AppboyNotificationFactory implements IAppboyNotificationFactory {
     int smallNotificationIconResourceId = AppboyNotificationUtils.setSmallIcon(appConfigurationProvider, notificationBuilder);
 
     // Honeycomb added large icons and sound
-    boolean usingLargeIcon = AppboyNotificationUtils.setLargeIconIfPresentAndSupported(context, appConfigurationProvider, notificationBuilder);
+    boolean usingLargeIcon = AppboyNotificationUtils.setLargeIconIfPresentAndSupported(context, appConfigurationProvider, notificationBuilder, notificationExtras);
     AppboyNotificationUtils.setSoundIfPresentAndSupported(notificationBuilder, notificationExtras);
 
     // From Honeycomb to ICS, we can use a custom view for our notifications which will allow them to be taller than

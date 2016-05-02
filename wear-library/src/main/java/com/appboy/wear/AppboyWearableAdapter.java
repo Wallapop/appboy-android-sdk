@@ -3,7 +3,6 @@ package com.appboy.wear;
 import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
-
 import com.appboy.wear.communication.WearCommunicationUtils;
 import com.appboy.wear.enums.Gender;
 import com.appboy.wear.enums.Month;
@@ -20,7 +19,6 @@ import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
-
 import java.math.BigDecimal;
 
 /**
@@ -30,6 +28,7 @@ import java.math.BigDecimal;
  * Methods containing 'User', such as addToUserCustomAttributeArray(), get called on the current AppboyUser
  * running on the phone.
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public class AppboyWearableAdapter implements GoogleApiClient.ConnectionCallbacks {
   private static final String TAG = String.format("%s.%s", Constants.APPBOY_LOG_TAG_PREFIX, AppboyWearableAdapter.class.getName());
   private static final String DATA_SYNC_PATH_PREFIX = "/appboy-data-sync/";

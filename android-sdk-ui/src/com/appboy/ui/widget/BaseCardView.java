@@ -22,11 +22,12 @@ import com.appboy.Constants;
 import com.appboy.models.cards.Card;
 import com.appboy.support.AppboyLogger;
 import com.appboy.support.PackageUtils;
+import com.appboy.support.StringUtils;
 import com.appboy.ui.R;
 import com.appboy.ui.actions.IAction;
 import com.appboy.ui.support.FrescoLibraryUtils;
-import com.appboy.ui.support.StringUtils;
 import com.facebook.drawee.generic.RoundingParams;
+import com.appboy.ui.support.ViewUtils;
 import com.facebook.drawee.view.SimpleDraweeView;
 
 import java.util.Observable;
@@ -211,14 +212,13 @@ public abstract class BaseCardView<T extends Card> extends RelativeLayout implem
         setImageViewToUrl(imageView, imageUrl, 1f, false);
     }
 
-    /**
-     * Calls setImageViewToUrl with respectAspectRatio set to true.
-     *
-     * @see com.appboy.ui.widget.BaseCardView#setImageViewToUrl(android.widget.ImageView, String, float, boolean)
-     */
-    void setImageViewToUrl(final ImageView imageView, final String imageUrl, final float aspectRatio) {
-        setImageViewToUrl(imageView, imageUrl, aspectRatio, true);
-    }
+  /**
+   * Calls setImageViewToUrl with respectAspectRatio set to true.
+   * @see com.appboy.ui.widget.BaseCardView#setImageViewToUrl(android.widget.ImageView, String, float, boolean)
+   */
+  void setImageViewToUrl(final ImageView imageView, final String imageUrl, final float aspectRatio) {
+    setImageViewToUrl(imageView, imageUrl, aspectRatio, true);
+  }
 
     /**
      * Asynchronously fetches the image at the given imageUrl and displays the image in the ImageView. No image will be
@@ -238,30 +238,30 @@ public abstract class BaseCardView<T extends Card> extends RelativeLayout implem
             return;
         }
 
-        if (aspectRatio == 0) {
-            AppboyLogger.w(TAG, "The image aspect ratio is 0. Not setting the card image.");
-            return;
-        }
+    if (aspectRatio == 0) {
+      AppboyLogger.w(TAG, "The image aspect ratio is 0. Not setting the card image.");
+      return;
+    }
 
-        if (!imageUrl.equals(imageView.getTag())) {
-            if (aspectRatio != SQUARE_ASPECT_RATIO) {
-                // We need to set layout params on the imageView once its layout state is visible. To do this,
-                // we obtain the imageView's observer and attach a listener on it for when the view's layout
-                // occurs. At layout time, we set the imageView's size params based on the aspect ratio
-                // for our card. Note that after the card's first layout, we don't want redundant resizing
-                // so we remove our listener after the resizing.
-                ViewTreeObserver viewTreeObserver = imageView.getViewTreeObserver();
-                if (viewTreeObserver.isAlive()) {
-                    viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                        @Override
-                        public void onGlobalLayout() {
-                            int width = imageView.getWidth();
-                            imageView.setLayoutParams(new LayoutParams(width, (int) (width / aspectRatio)));
-                            removeOnGlobalLayoutListenerSafe(imageView.getViewTreeObserver(), this);
-                        }
-                    });
-                }
+    if (!imageUrl.equals(imageView.getTag())) {
+      if (aspectRatio != SQUARE_ASPECT_RATIO) {
+        // We need to set layout params on the imageView once its layout state is visible. To do this,
+        // we obtain the imageView's observer and attach a listener on it for when the view's layout
+        // occurs. At layout time, we set the imageView's size params based on the aspect ratio
+        // for our card. Note that after the card's first layout, we don't want redundant resizing
+        // so we remove our listener after the resizing.
+        ViewTreeObserver viewTreeObserver = imageView.getViewTreeObserver();
+        if (viewTreeObserver.isAlive()) {
+          viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+              int width = imageView.getWidth();
+              imageView.setLayoutParams(new LayoutParams(width, (int) (width / aspectRatio)));
+              ViewUtils.removeOnGlobalLayoutListenerSafe(imageView.getViewTreeObserver(), this);
             }
+          });
+        }
+      }
 
             imageView.setImageResource(android.R.color.transparent);
             Appboy.getInstance(getContext()).fetchAndRenderImage(imageUrl, imageView, respectAspectRatio);
@@ -269,28 +269,17 @@ public abstract class BaseCardView<T extends Card> extends RelativeLayout implem
         }
     }
 
-    @TargetApi(16)
-    public static void removeOnGlobalLayoutListenerSafe(ViewTreeObserver viewTreeObserver,
-                                                        ViewTreeObserver.OnGlobalLayoutListener onGlobalLayoutListener) {
-        if (android.os.Build.VERSION.SDK_INT < 16) {
-            viewTreeObserver.removeGlobalOnLayoutListener(onGlobalLayoutListener);
-        } else {
-            viewTreeObserver.removeOnGlobalLayoutListener(onGlobalLayoutListener);
-        }
+  /**
+   * Loads an image via url for display in a SimpleDraweeView using the Facebook Fresco library.
+   * By default, gif urls are set to autoplay and tap to retry is on for all images.
+   * @param simpleDraweeView the fresco SimpleDraweeView in which to display the image
+   * @param imageUrl the URL of the image resource
+   */
+  void setSimpleDraweeToUrl(final SimpleDraweeView simpleDraweeView, final String imageUrl, final float aspectRatio, final boolean respectAspectRatio) {
+    if (imageUrl == null) {
+      AppboyLogger.w(TAG, "The image url to render is null. Not setting the card image.");
+      return;
     }
-
-    /**
-     * Loads an image via url for display in a SimpleDraweeView using the Facebook Fresco library.
-     * By default, gif urls are set to autoplay and tap to retry is on for all images.
-     *
-     * @param simpleDraweeView the fresco SimpleDraweeView in which to display the image
-     * @param imageUrl         the URL of the image resource
-     */
-    void setSimpleDraweeToUrl(final SimpleDraweeView simpleDraweeView, final String imageUrl, final float aspectRatio, final boolean respectAspectRatio) {
-        if (imageUrl == null) {
-            AppboyLogger.w(TAG, "The image url to render is null. Not setting the card image.");
-            return;
-        }
 
         FrescoLibraryUtils.setDraweeControllerHelper(simpleDraweeView, imageUrl, aspectRatio, respectAspectRatio);
     }
@@ -302,14 +291,17 @@ public abstract class BaseCardView<T extends Card> extends RelativeLayout implem
         return mCanUseFresco;
     }
 
-    protected static void handleCardClick(Context context, Card card, IAction cardAction, String tag) {
-        card.setIsRead(true);
-        if (cardAction != null) {
-            AppboyLogger.d(tag, String.format("Logged click for card %s", card.getId()));
-            card.logClick();
-            cardAction.execute(context);
-        }
+  protected static void handleCardClick(Context context, Card card, IAction cardAction, String tag) {
+    card.setIsRead(true);
+    if (cardAction != null) {
+      if (card.logClick()) {
+        AppboyLogger.d(tag, String.format("Logged click for card %s", card.getId()));
+      } else {
+        AppboyLogger.d(tag, String.format("Logging click failed for card %s", card.getId()));
+      }
+      cardAction.execute(context);
     }
+  }
 
     /**
      * Gets the view to display the correct card image after checking if it can use Fresco.

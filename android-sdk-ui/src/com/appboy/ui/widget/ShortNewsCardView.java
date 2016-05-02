@@ -88,12 +88,12 @@ public class ShortNewsCardView extends BaseCardView<ShortNewsCard> {
         setOptionalTextView(mDomain, card.getDomain());
         mCardAction = ActionFactory.createUriAction(getContext(), card.getUrl());
 
-        setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                handleCardClick(mContext, card, mCardAction, TAG);
-            }
-        });
+    setOnClickListener(new OnClickListener() {
+      @Override
+      public void onClick(View view) {
+        handleCardClick(mContext, card, mCardAction, TAG);
+      }
+    });
 
         if (canUseFresco()) {
             setSimpleDraweeToUrl(mDrawee, card.getImageUrl(), mAspectRatio, true);

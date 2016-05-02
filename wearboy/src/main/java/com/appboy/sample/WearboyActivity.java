@@ -5,15 +5,12 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
-
 import com.appboy.wear.AppboyWearableAdapter;
 import com.appboy.wear.enums.WearScreenShape;
 import com.appboy.wear.models.AppboyProperties;
-
+import java.math.BigDecimal;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.math.BigDecimal;
 
 public class WearboyActivity extends Activity implements View.OnClickListener {
   private static final String TAG = WearboyActivity.class.getName();
@@ -40,8 +37,8 @@ public class WearboyActivity extends Activity implements View.OnClickListener {
   }
 
   @Override
-  public void onClick(View v) {
-    switch (v.getId()) {
+  public void onClick(View view) {
+    switch (view.getId()) {
       case R.id.wearboy_increment_custom_attribute_button:
         mAppboyAdapter.incrementCustomUserAttribute("times pressed button");
         showToast("Incremented attribute");
@@ -58,7 +55,7 @@ public class WearboyActivity extends Activity implements View.OnClickListener {
         break;
 
       case R.id.wearboy_log_purchase_button:
-        mAppboyAdapter.logPurchase("product id here", "USD", new BigDecimal(3.50d));
+        mAppboyAdapter.logPurchase("product id here", "USD", new BigDecimal("3.50"));
         showToast("Logged purchase");
         break;
 
@@ -75,6 +72,9 @@ public class WearboyActivity extends Activity implements View.OnClickListener {
       case R.id.wearboy_set_screen_type_square_button:
         mAppboyAdapter.logWearScreenShape(WearScreenShape.SQUARE);
         showToast("Logged screen as square");
+        break;
+
+      default:
         break;
     }
   }

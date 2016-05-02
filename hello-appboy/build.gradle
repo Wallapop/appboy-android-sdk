@@ -1,4 +1,4 @@
-apply plugin: 'android'
+apply plugin: 'com.android.application'
 
 dependencies {
   compile 'com.appboy:android-sdk-ui:w1.0-1.10.3'
@@ -11,5 +11,13 @@ android {
   defaultConfig {
     minSdkVersion 9
     targetSdkVersion 23
+  }
+
+  buildTypes {
+    debug {
+    }
+    release {
+      minifyEnabled false
+    }
   }
 }
