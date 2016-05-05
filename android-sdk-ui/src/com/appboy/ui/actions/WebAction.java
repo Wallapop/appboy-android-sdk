@@ -8,6 +8,7 @@ import com.appboy.support.AppboyFileUtils;
 import com.appboy.ui.AppboyWebViewActivity;
 import com.appboy.ui.R;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -35,8 +36,11 @@ public final class WebAction implements IAction {
     context.startActivity(intent);
   }
 
-  public static List<String> getSupportedSchemes() {
-    return AppboyFileUtils.REMOTE_SCHEMES;
+  public static List<String> getSupportedSchemes(Context context) {
+    List<String> remoteSchemes = AppboyFileUtils.REMOTE_SCHEMES;
+    String[] moreSupportedSchemes = context.getResources().getStringArray(R.array.supported_schemes);
+    remoteSchemes.addAll(Arrays.asList(moreSupportedSchemes));
+    return remoteSchemes;
   }
 
   public static String[] getUnsupportedAuthority(Context context) {
