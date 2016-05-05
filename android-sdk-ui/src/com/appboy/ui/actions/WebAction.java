@@ -8,6 +8,7 @@ import com.appboy.support.AppboyFileUtils;
 import com.appboy.ui.AppboyWebViewActivity;
 import com.appboy.ui.R;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -37,7 +38,7 @@ public final class WebAction implements IAction {
   }
 
   public static List<String> getSupportedSchemes(Context context) {
-    List<String> remoteSchemes = AppboyFileUtils.REMOTE_SCHEMES;
+    List<String> remoteSchemes = new ArrayList<>(AppboyFileUtils.REMOTE_SCHEMES);
     String[] moreSupportedSchemes = context.getResources().getStringArray(R.array.supported_schemes);
     remoteSchemes.addAll(Arrays.asList(moreSupportedSchemes));
     return remoteSchemes;
