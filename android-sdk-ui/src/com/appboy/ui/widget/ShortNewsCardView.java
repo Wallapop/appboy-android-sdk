@@ -43,11 +43,13 @@ public class ShortNewsCardView extends BaseCardView<ShortNewsCard> {
         mTitle = (TextView) findViewById(R.id.com_appboy_short_news_card_title);
         mDomain = (TextView) findViewById(R.id.com_appboy_short_news_card_domain);
 
-        if (canUseFresco()) {
-            mDrawee = (SimpleDraweeView) getProperViewFromInflatedStub(R.id.com_appboy_short_news_card_drawee_stub);
-        } else {
-            mImage = (ImageView) getProperViewFromInflatedStub(R.id.com_appboy_short_news_card_imageview_stub);
-        }
+    if (canUseFresco()) {
+      mDrawee = (SimpleDraweeView) getProperViewFromInflatedStub(R.id.com_appboy_short_news_card_drawee_stub);
+    } else {
+      mImage = (ImageView) getProperViewFromInflatedStub(R.id.com_appboy_short_news_card_imageview_stub);
+      mImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+      mImage.setAdjustViewBounds(true);
+    }
 
         setTypeFace();
 

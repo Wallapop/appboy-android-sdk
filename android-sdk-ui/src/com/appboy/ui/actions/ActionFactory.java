@@ -7,6 +7,7 @@ import android.os.Bundle;
 import com.appboy.support.StringUtils;
 
 public class ActionFactory {
+
   public static IAction createUriAction(Context context, String url) {
     return createUriAction(context, url, null);
   }
@@ -14,7 +15,7 @@ public class ActionFactory {
   public static IAction createUriAction(Context context, String url, Bundle extras) {
     if (!StringUtils.isNullOrBlank(url)) {
       Uri uri = Uri.parse(url);
-      if (WebAction.getSupportedSchemes().contains(uri.getScheme())) {
+      if (WebAction.getSupportedSchemes(context).contains(uri.getScheme())) {
         return new WebAction(url, extras);
       } else if ("intent".equals(uri.getScheme())) {
         return new ActivityAction(context.getPackageName(), uri, extras);

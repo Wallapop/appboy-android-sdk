@@ -82,6 +82,7 @@
     <item name="colorPrimaryDark">#1c222b</item>
     <item name="colorAccent">#3fc1bf</item>
     <item name="android:windowBackground">@color/window_background</item>
+    <item name="titleTextColor">@android:color/white</item>
   </style>
   <style name="Appboy.Cards.CaptionedImage.Title.Container">
     <item name="android:textColor">@color/com_appboy_title</item>
