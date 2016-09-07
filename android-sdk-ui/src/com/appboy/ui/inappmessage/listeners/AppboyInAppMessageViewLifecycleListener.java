@@ -14,8 +14,6 @@ import com.appboy.support.AppboyFileUtils;
 import com.appboy.support.AppboyLogger;
 import com.appboy.support.BundleUtils;
 import com.appboy.support.WebContentUtils;
-import com.appboy.ui.actions.ActionFactory;
-import com.appboy.ui.actions.IAction;
 import com.appboy.ui.inappmessage.AppboyInAppMessageManager;
 import com.appboy.ui.inappmessage.InAppMessageCloser;
 
@@ -47,6 +45,7 @@ public class AppboyInAppMessageViewLifecycleListener implements IInAppMessageVie
     if (inAppMessage instanceof IInAppMessageHtml) {
       startClearHtmlInAppMessageAssetsThread();
     }
+    inAppMessage.onAfterClosed();
   }
 
   @Override
@@ -103,20 +102,16 @@ public class AppboyInAppMessageViewLifecycleListener implements IInAppMessageVie
     }
     switch (clickAction) {
       case NEWS_FEED:
-        inAppMessage.setAnimateOut(false);
         inAppMessageCloser.close(false);
         getInAppMessageManager().getAppboyNavigator().gotoNewsFeed(getInAppMessageManager().getActivity(),
             BundleUtils.mapToBundle(inAppMessage.getExtras()));
         break;
       case URI:
-        inAppMessage.setAnimateOut(false);
         inAppMessageCloser.close(false);
-        IAction action = ActionFactory.createUriAction(getInAppMessageManager().getActivity(),
-            clickUri.toString());
-        action.execute(getInAppMessageManager().getActivity());
+        getInAppMessageManager().getAppboyNavigator().gotoURI(getInAppMessageManager().getActivity(), clickUri, BundleUtils.mapToBundle(inAppMessage.getExtras()));
         break;
       case NONE:
-        inAppMessageCloser.close(true);
+        inAppMessageCloser.close(inAppMessage.getAnimateOut());
         break;
       default:
         inAppMessageCloser.close(false);

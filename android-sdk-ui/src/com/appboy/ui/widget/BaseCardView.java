@@ -25,6 +25,7 @@ import com.appboy.support.PackageUtils;
 import com.appboy.support.StringUtils;
 import com.appboy.ui.R;
 import com.appboy.ui.actions.IAction;
+import com.appboy.ui.feed.AppboyFeedManager;
 import com.appboy.ui.support.FrescoLibraryUtils;
 import com.facebook.drawee.generic.RoundingParams;
 import com.appboy.ui.support.ViewUtils;
@@ -292,14 +293,25 @@ public abstract class BaseCardView<T extends Card> extends RelativeLayout implem
     }
 
   protected static void handleCardClick(Context context, Card card, IAction cardAction, String tag) {
-    card.setIsRead(true);
+    handleCardClick(context, card, cardAction, tag, true);
+  }
+
+  /**
+   * All card views should handle new feed card clicks through this method
+   */
+  protected static void handleCardClick(Context context, Card card, IAction cardAction, String tag, boolean markAsRead) {
+    if (markAsRead) {
+      card.setIsRead(true);
+    }
     if (cardAction != null) {
       if (card.logClick()) {
         AppboyLogger.d(tag, String.format("Logged click for card %s", card.getId()));
       } else {
         AppboyLogger.d(tag, String.format("Logging click failed for card %s", card.getId()));
       }
-      cardAction.execute(context);
+      if (!AppboyFeedManager.getInstance().getFeedCardClickActionListener().onFeedCardClicked(context, card, cardAction)) {
+        cardAction.execute(context);
+      }
     }
   }
 

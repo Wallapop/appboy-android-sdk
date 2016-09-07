@@ -48,11 +48,13 @@ public class CrossPromotionSmallCardView extends BaseCardView<CrossPromotionSmal
         mStarRating = (StarRatingView) findViewById(R.id.com_appboy_cross_promotion_small_card_star_rating);
         mPrice = (Button) findViewById(R.id.com_appboy_cross_promotion_small_card_price);
 
-        if (canUseFresco()) {
-            mDrawee = (SimpleDraweeView) getProperViewFromInflatedStub(R.id.com_appboy_cross_promotion_small_card_drawee_stub);
-        } else {
-            mImage = (ImageView) getProperViewFromInflatedStub(R.id.com_appboy_cross_promotion_small_card_imageview_stub);
-        }
+    if (canUseFresco()) {
+      mDrawee = (SimpleDraweeView) getProperViewFromInflatedStub(R.id.com_appboy_cross_promotion_small_card_drawee_stub);
+    } else {
+      mImage = (ImageView) getProperViewFromInflatedStub(R.id.com_appboy_cross_promotion_small_card_imageview_stub);
+      mImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+      mImage.setAdjustViewBounds(true);
+    }
 
         if (card != null) {
             setCard(card);
@@ -120,11 +122,11 @@ public class CrossPromotionSmallCardView extends BaseCardView<CrossPromotionSmal
     // else, format client-side.
       mPrice.setText(getPriceString(card.getPrice()));
     }
-    mPriceAction = new GooglePlayAppDetailsAction(card.getPackage(), false,  card.getAppStore(), card.getKindleId());
+    mPriceAction = new GooglePlayAppDetailsAction(card.getPackage(), false, card.getAppStore(), card.getKindleId());
     mPrice.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View view) {
-        handleCardClick(mContext,card, mPriceAction, TAG);
+        handleCardClick(mContext, card, mPriceAction, TAG);
       }
     });
 
