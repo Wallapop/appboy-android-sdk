@@ -3,7 +3,7 @@
   <groupId>com.appboy</groupId>
   <artifactId>android-sdk-ui</artifactId>
   <versioning>
-    <release>w1.8-1.13.4</release>
+    <release>w1.8-1.15.0</release>
     <versions>
       <version>w1.0-1.10.3</version>
       <version>w1.1-1.10.3</version>
@@ -32,7 +32,8 @@
       <version>w1.7-1.11.2</version>
       <version>w1.7-1.13.4</version>
       <version>w1.8-1.13.4</version>
+      <version>w1.8-1.15.0</version>
     </versions>
-    <lastUpdated>20160505100950</lastUpdated>
+    <lastUpdated>20160907122601</lastUpdated>
   </versioning>
 </metadata>
