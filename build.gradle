@@ -1,24 +1,34 @@
 buildscript {
   repositories {
     mavenCentral()
-    maven { url "https://jitpack.io" }
+    jcenter()
   }
 
   dependencies {
     classpath 'com.android.tools.build:gradle:2.3.0'
     classpath 'com.github.dcendents:android-maven-gradle-plugin:1.5'
-    classpath 'com.github.JakeWharton:sdk-manager-plugin:0ce4cdf08009d79223850a59959d9d6e774d0f77'
+    classpath 'com.google.gms:google-services:3.0.0'
   }
+}
+
+ext {
+  compileSdkVersion = 24
+  buildToolsVersion = '24.0.0'
+  minSdkVersion = 9
+  targetSdkVersion = 24
+  appVersionName = project.version
+  minSdkVersionForLifecycleListener = 14
 }
 
 subprojects {
   repositories {
+    mavenLocal()
     mavenCentral()
     maven { url "http://wallapop.github.io/appboy-android-sdk/sdk" }
   }
 
   group = 'com.appboy'
-  version = '1.15.0'
+  version = '1.19.0'
   String wallapopVersion = 'w1.8'
   version = "$wallapopVersion-$version"
 

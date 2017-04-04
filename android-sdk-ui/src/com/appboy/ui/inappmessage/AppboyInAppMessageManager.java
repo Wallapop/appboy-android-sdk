@@ -1,6 +1,7 @@
 package com.appboy.ui.inappmessage;
 
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
@@ -95,6 +96,7 @@ public final class AppboyInAppMessageManager {
   private IInAppMessageAnimationFactory mCustomInAppMessageAnimationFactory;
   private IInAppMessageViewWrapper mInAppMessageViewWrapper;
   private IInAppMessage mCarryoverInAppMessage;
+  private IInAppMessage mUnRegisteredInAppMessage;
   private AtomicBoolean mDisplayingInAppMessage = new AtomicBoolean(false);
   private Context mApplicationContext;
   private Integer mOriginalOrientation;
@@ -132,15 +134,43 @@ public final class AppboyInAppMessageManager {
   }
 
   /**
+   * Ensures the InAppMessageManager is subscribed in-app message events if not already subscribed.
+   * Before this method gets called, the InAppMessageManager is not subscribed to in-app message events
+   * and cannot display them. Every call to registerInAppMessageManager() calls this method.
+   * <p/>
+   * If events with triggers are logged before the first call to registerInAppMessageManager(), then the
+   * corresponding in-app message won't display. Thus, if logging events with triggers before the first call
+   * to registerInAppMessageManager(), then call this method to ensure that in-app message events
+   * are correctly handled by the AppboyInAppMessageManager.
+   * <p/>
+   * For example, if logging custom events with triggers in your first activity's onCreate(), be sure
+   * to call this method manually beforehand so that the in-app message will get displayed by the time
+   * registerInAppMessageManager() gets called.
+   *
+   * @param context The application context
+   */
+  public void ensureSubscribedToInAppMessageEvents(Context context) {
+    if (mInAppMessageEventSubscriber == null) {
+      AppboyLogger.d(TAG, "Subscribing in-app message event subscriber");
+      mInAppMessageEventSubscriber = createInAppMessageEventSubscriber();
+      Appboy.getInstance(context).subscribeToNewInAppMessages(mInAppMessageEventSubscriber);
+    }
+  }
+
+  /**
    * Registers the in-app message manager, which will listen to and display incoming in-app messages. The
    * current Activity is required in order to properly inflate and display the in-app message view.
    * <p/>
    * Important note: Every Activity must call registerInAppMessageManager in the onResume lifecycle
    * method, otherwise in-app messages may be lost!
-   *
+   * <p/>
+   * This method also calls {@link AppboyInAppMessageManager#ensureSubscribedToInAppMessageEvents(Context)}.
+   * To be sure that no in-app messages are lost, you should call {@link AppboyInAppMessageManager#ensureSubscribedToInAppMessageEvents(Context)} as early
+   * as possible in your app, preferably in your {@link Application#onCreate()}.
    * @param activity The current Activity.
    */
   public void registerInAppMessageManager(Activity activity) {
+    AppboyLogger.d(TAG, "registerInAppMessageManager called");
     // We need the current Activity so that we can inflate or programmatically create the in-app message
     // View for each Activity. We cannot share the View because doing so would create a memory leak.
     mActivity = activity;
@@ -154,16 +184,17 @@ public final class AppboyInAppMessageManager {
     // We have a special check to see if the host app switched to a different Activity (or recreated
     // the same Activity during an orientation change) so that we can redisplay the in-app message.
     if (mCarryoverInAppMessage != null) {
-      AppboyLogger.d(TAG, "Displaying carryover in-app message.");
+      AppboyLogger.d(TAG, "Requesting display of carryover in-app message.");
       mCarryoverInAppMessage.setAnimateIn(false);
       displayInAppMessage(mCarryoverInAppMessage, true);
       mCarryoverInAppMessage = null;
+    } else if (mUnRegisteredInAppMessage != null) {
+      AppboyLogger.d(TAG, "Adding previously unregistered in-app message.");
+      addInAppMessage(mUnRegisteredInAppMessage);
+      mUnRegisteredInAppMessage = null;
     }
 
-    // Every time the AppboyInAppMessageManager is registered to an Activity, we add a in-app message subscriber
-    // which listens to new in-app messages, adds it to the stack, and displays it if it can.
-    mInAppMessageEventSubscriber = createInAppMessageEventSubscriber();
-    Appboy.getInstance(activity).subscribeToNewInAppMessages(mInAppMessageEventSubscriber);
+    ensureSubscribedToInAppMessageEvents(mApplicationContext);
   }
 
   /**
@@ -172,11 +203,12 @@ public final class AppboyInAppMessageManager {
    * @param activity The current Activity.
    */
   public void unregisterInAppMessageManager(Activity activity) {
+    AppboyLogger.d(TAG, "unregisterInAppMessageManager called");
+
     // If there is an in-app message being displayed when the host app transitions to another Activity (or
     // requests an orientation change), we save it in memory so that we can redisplay it when the
     // operation is done.
     if (mInAppMessageViewWrapper != null) {
-
       ViewUtils.removeViewFromParent(mInAppMessageViewWrapper.getInAppMessageView());
       // Only continue if we're not animating a close
       if (mInAppMessageViewWrapper.getIsAnimatingClose()) {
@@ -191,9 +223,6 @@ public final class AppboyInAppMessageManager {
       mCarryoverInAppMessage = null;
     }
 
-    // In-app message subscriptions are per Activity, so we must remove the subscriber when the host app
-    // unregisters the in-app message manager.
-    Appboy.getInstance(activity).removeSingleSubscription(mInAppMessageEventSubscriber, InAppMessageEvent.class);
     mActivity = null;
     mDisplayingInAppMessage.set(false);
   }
@@ -207,6 +236,7 @@ public final class AppboyInAppMessageManager {
    *                                    default IInAppMessageManagerListener).
    */
   public void setCustomInAppMessageManagerListener(IInAppMessageManagerListener inAppMessageManagerListener) {
+    AppboyLogger.d(TAG, "Custom InAppMessageManagerListener set");
     mCustomInAppMessageManagerListener = inAppMessageManagerListener;
   }
 
@@ -217,6 +247,7 @@ public final class AppboyInAppMessageManager {
    *                                       default IHtmlInAppMessageActionListener).
    */
   public void setCustomHtmlInAppMessageActionListener(IHtmlInAppMessageActionListener htmlInAppMessageActionListener) {
+    AppboyLogger.d(TAG, "Custom htmlInAppMessageActionListener set");
     mCustomHtmlInAppMessageActionListener = htmlInAppMessageActionListener;
   }
 
@@ -228,6 +259,7 @@ public final class AppboyInAppMessageManager {
    *                                     IInAppMessageAnimationFactory).
    */
   public void setCustomInAppMessageAnimationFactory(IInAppMessageAnimationFactory inAppMessageAnimationFactory) {
+    AppboyLogger.d(TAG, "Custom InAppMessageAnimationFactory set");
     mCustomInAppMessageAnimationFactory = inAppMessageAnimationFactory;
   }
 
@@ -239,6 +271,7 @@ public final class AppboyInAppMessageManager {
    *                                IInAppMessageViewFactory).
    */
   public void setCustomInAppMessageViewFactory(IInAppMessageViewFactory inAppMessageViewFactory) {
+    AppboyLogger.d(TAG, "Custom InAppMessageViewFactory set");
     mCustomInAppMessageViewFactory = inAppMessageViewFactory;
   }
 
@@ -262,9 +295,13 @@ public final class AppboyInAppMessageManager {
   public boolean requestDisplayInAppMessage() {
     try {
       if (mActivity == null) {
-        AppboyLogger.e(TAG, "No activity is currently registered to receive in-app messages. Registering in-app message as carry-over "
-                + "in-app message. It will automatically be displayed when the next activity registers to receive in-app messages.");
-        mCarryoverInAppMessage = mInAppMessageStack.pop();
+        if (!mInAppMessageStack.empty()) {
+          AppboyLogger.w(TAG, "No activity is currently registered to receive in-app messages. Saving in-app message as unregistered "
+              + "in-app message. It will automatically be displayed when the next activity registers to receive in-app messages.");
+          mUnRegisteredInAppMessage = mInAppMessageStack.pop();
+        } else {
+          AppboyLogger.d(TAG, "No activity is currently registered to receive in-app messages and the in-app message stack is empty. Doing nothing.");
+        }
         return false;
       }
       if (mDisplayingInAppMessage.get()) {
@@ -426,7 +463,7 @@ public final class AppboyInAppMessageManager {
     // Note:  for mDisplayingInAppMessage to be accurate it requires this method does not exit anywhere but the at the end
     // of this try/catch when we know whether we are successfully displaying the IAM or not.
     if (!mDisplayingInAppMessage.compareAndSet(false, true)) {
-      AppboyLogger.d(TAG, "A in-app message is currently being displayed.  Adding in-app message back on the stack.");
+      AppboyLogger.d(TAG, "A in-app message is currently being displayed. Adding in-app message back on the stack.");
       mInAppMessageStack.push(inAppMessage);
       return false;
     }
@@ -502,7 +539,7 @@ public final class AppboyInAppMessageManager {
   /**
    *
    * For in-app messages that have a preferred orientation, locks the screen orientation and
-   * returns true if the screen is currently in the preferred orientation.  If the screen is not
+   * returns true if the screen is currently in the preferred orientation. If the screen is not
    * currently in the preferred orientation, returns false.
    *
    * Always returns true for tablets, regardless of current orientation.

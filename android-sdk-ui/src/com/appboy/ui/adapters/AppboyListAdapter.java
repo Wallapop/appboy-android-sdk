@@ -14,8 +14,7 @@ import com.appboy.models.cards.CrossPromotionSmallCard;
 import com.appboy.models.cards.ShortNewsCard;
 import com.appboy.models.cards.TextAnnouncementCard;
 import com.appboy.support.AppboyLogger;
-import com.appboy.ui.R;
-import com.appboy.ui.configuration.XmlUIConfigurationProvider;
+import com.appboy.ui.widget.BannerImageCardView;
 import com.appboy.ui.widget.BaseCardView;
 import com.appboy.ui.widget.DefaultCardView;
 import java.util.Collection;
@@ -48,15 +47,11 @@ public class AppboyListAdapter extends ArrayAdapter<Card> {
 
   private final Context mContext;
   private final Set<String> mCardIdImpressions;
-  private final XmlUIConfigurationProvider mUiConfigurationProvider;
-  private final LayoutInflater mInflater;
 
   public AppboyListAdapter(Context context, int layoutResourceId, List<Card> cards) {
     super(context, layoutResourceId, cards);
     mContext = context;
     mCardIdImpressions = new HashSet<String>();
-    mUiConfigurationProvider = new XmlUIConfigurationProvider(context);
-    mInflater = LayoutInflater.from(mContext);
   }
 
   /**

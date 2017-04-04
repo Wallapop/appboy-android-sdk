@@ -9,6 +9,7 @@ import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -24,9 +25,10 @@ import android.util.Log;
 import com.appboy.Appboy;
 import com.appboy.AppboyAdmReceiver;
 import com.appboy.AppboyGcmReceiver;
+import com.appboy.AppboyInternal;
 import com.appboy.Constants;
 import com.appboy.IAppboyNotificationFactory;
-import com.appboy.configuration.XmlAppConfigurationProvider;
+import com.appboy.configuration.AppboyConfigurationProvider;
 import com.appboy.support.AppboyImageUtils;
 import com.appboy.support.AppboyLogger;
 import com.appboy.support.IntentUtils;
@@ -37,6 +39,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Iterator;
+import java.util.List;
 
 public class AppboyNotificationUtils {
   private static final String TAG = String.format("%s.%s", Constants.APPBOY_LOG_TAG_PREFIX, AppboyNotificationUtils.class.getName());
@@ -65,7 +68,7 @@ public class AppboyNotificationUtils {
   }
 
   /**
-   * Handles a push notification click.  Called by GCM/ADM receiver when an
+   * Handles a push notification click. Called by GCM/ADM receiver when an
    * Appboy push notification click intent is received.
    * <p/>
    * See {@link #logNotificationOpened} and {@link #sendNotificationOpenedBroadcast}
@@ -78,7 +81,7 @@ public class AppboyNotificationUtils {
     try {
       logNotificationOpened(context, intent);
       sendNotificationOpenedBroadcast(context, intent);
-      XmlAppConfigurationProvider appConfigurationProvider = new XmlAppConfigurationProvider(context);
+      AppboyConfigurationProvider appConfigurationProvider = new AppboyConfigurationProvider(context);
       if (appConfigurationProvider.getHandlePushDeepLinksAutomatically()) {
         routeUserWithNotificationOpenedIntent(context, intent);
       }
@@ -119,6 +122,18 @@ public class AppboyNotificationUtils {
       Log.d(TAG, String.format("Found a deep link %s.", deepLink));
       Intent uriIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(deepLink))
           .putExtras(extras);
+
+      // If the current app can already handle the deep link, default to using it
+      List<ResolveInfo> resolveInfos = context.getPackageManager().queryIntentActivities(uriIntent, 0);
+      if (resolveInfos.size() > 1) {
+        for (ResolveInfo resolveInfo : resolveInfos) {
+          if (resolveInfo.activityInfo.packageName.equals(context.getPackageName())) {
+            uriIntent.setPackage(resolveInfo.activityInfo.packageName);
+            break;
+          }
+        }
+      }
+
       TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
       stackBuilder.addNextIntent(startActivityIntent);
       stackBuilder.addNextIntent(uriIntent);
@@ -134,7 +149,7 @@ public class AppboyNotificationUtils {
   }
 
   /**
-   * Get the Appboy extras Bundle from the notification extras.  Notification extras must be in GCM/ADM format.
+   * Get the Appboy extras Bundle from the notification extras. Notification extras must be in GCM/ADM format.
    *
    * @param notificationExtras Notification extras as provided by GCM/ADM.
    * @return Returns the Appboy extras Bundle from the notification extras. Amazon ADM recursively flattens all JSON messages,
@@ -168,7 +183,7 @@ public class AppboyNotificationUtils {
   }
 
   /**
-   * Parses the JSON into a bundle.  The JSONObject parsed from the input string must be a flat
+   * Parses the JSON into a bundle. The JSONObject parsed from the input string must be a flat
    * dictionary with all string values.
    */
   public static Bundle parseJSONStringDictionaryIntoBundle(String jsonStringDictionary) {
@@ -182,7 +197,7 @@ public class AppboyNotificationUtils {
       }
       return bundle;
     } catch (JSONException e) {
-      AppboyLogger.e(TAG, String.format("Unable parse JSON into a bundle."), e);
+      AppboyLogger.e(TAG, "Unable parse JSON into a bundle.", e);
       return null;
     }
   }
@@ -224,7 +239,29 @@ public class AppboyNotificationUtils {
     if (notificationExtras != null) {
       pushReceivedIntent.putExtras(notificationExtras);
     }
+    AppboyLogger.d(TAG, "Sending push message received broadcast");
     context.sendBroadcast(pushReceivedIntent);
+  }
+
+  /**
+   * Requests a geofence refresh from Appboy if appropriate based on the payload of the push notification.
+   *
+   * @param context
+   * @param notificationExtras Notification extras as provided by GCM/ADM.
+   * @return True iff a geofence refresh was requested from Appboy.
+   */
+  public static boolean requestGeofenceRefreshIfAppropriate(Context context, Bundle notificationExtras) {
+    if (notificationExtras.containsKey(Constants.APPBOY_PUSH_SYNC_GEOFENCES_KEY)) {
+      if (Boolean.parseBoolean(notificationExtras.getString(Constants.APPBOY_PUSH_SYNC_GEOFENCES_KEY))) {
+        AppboyInternal.requestGeofenceRefresh(context, true);
+        return true;
+      } else {
+        AppboyLogger.d(TAG, "Geofence sync key was false. Not syncing geofences.");
+      }
+    } else {
+      AppboyLogger.d(TAG, "Geofence sync key not included in push payload. Not syncing geofences.");
+    }
+    return false;
   }
 
   /**
@@ -238,6 +275,7 @@ public class AppboyNotificationUtils {
     PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT);
     AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
     if (durationInMillis >= Constants.APPBOY_MINIMUM_NOTIFICATION_DURATION_MILLIS) {
+      AppboyLogger.d(TAG, String.format("Setting Notification duration alarm for %d ms", durationInMillis));
       alarmManager.set(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + durationInMillis, pendingIntent);
     }
   }
@@ -253,24 +291,24 @@ public class AppboyNotificationUtils {
       if (notificationExtras.containsKey(Constants.APPBOY_PUSH_CUSTOM_NOTIFICATION_ID)) {
         try {
           int notificationId = Integer.parseInt(notificationExtras.getString(Constants.APPBOY_PUSH_CUSTOM_NOTIFICATION_ID));
-          AppboyLogger.d(TAG, String.format("Using notification id provided in the message's extras bundle: " + notificationId));
+          AppboyLogger.d(TAG, "Using notification id provided in the message's extras bundle: " + notificationId);
           return notificationId;
 
         } catch (NumberFormatException e) {
-          AppboyLogger.e(TAG, String.format("Unable to parse notification id provided in the "
+          AppboyLogger.e(TAG, "Unable to parse notification id provided in the "
               + "message's extras bundle. Using default notification id instead: "
-              + Constants.APPBOY_DEFAULT_NOTIFICATION_ID), e);
+              + Constants.APPBOY_DEFAULT_NOTIFICATION_ID, e);
           return Constants.APPBOY_DEFAULT_NOTIFICATION_ID;
         }
       } else {
         String messageKey = AppboyNotificationUtils.bundleOptString(notificationExtras, Constants.APPBOY_PUSH_TITLE_KEY, "")
             + AppboyNotificationUtils.bundleOptString(notificationExtras, Constants.APPBOY_PUSH_CONTENT_KEY, "");
         int notificationId = messageKey.hashCode();
-        AppboyLogger.d(TAG, String.format("Message without notification id provided in the extras bundle received.  Using a hash of the message: " + notificationId));
+        AppboyLogger.d(TAG, "Message without notification id provided in the extras bundle received. Using a hash of the message: " + notificationId);
         return notificationId;
       }
     } else {
-      AppboyLogger.d(TAG, String.format("Message without extras bundle received.  Using default notification id: " + Constants.APPBOY_DEFAULT_NOTIFICATION_ID));
+      AppboyLogger.d(TAG, String.format("Message without extras bundle received. Using default notification id: " + Constants.APPBOY_DEFAULT_NOTIFICATION_ID));
       return Constants.APPBOY_DEFAULT_NOTIFICATION_ID;
     }
   }
@@ -290,7 +328,7 @@ public class AppboyNotificationUtils {
           AppboyLogger.e(TAG, String.format("Received invalid notification priority %d", notificationPriority));
         }
       } catch (NumberFormatException e) {
-        AppboyLogger.e(TAG, String.format("Unable to parse custom priority. Returning default priority of " + Notification.PRIORITY_DEFAULT), e);
+        AppboyLogger.e(TAG, "Unable to parse custom priority. Returning default priority of " + Notification.PRIORITY_DEFAULT, e);
       }
     }
     return Notification.PRIORITY_DEFAULT;
@@ -307,7 +345,7 @@ public class AppboyNotificationUtils {
   /**
    * This method will wake the device using a wake lock if the WAKE_LOCK permission is present in the
    * manifest. If the permission is not present, this does nothing. If the screen is already on,
-   * and the permission is present, this does nothing.  If the priority of the incoming notification
+   * and the permission is present, this does nothing. If the priority of the incoming notification
    * is min, this does nothing.
    */
   public static boolean wakeScreenIfHasPermission(Context context, Bundle notificationExtras) {
@@ -349,6 +387,7 @@ public class AppboyNotificationUtils {
    */
   public static void setTitleIfPresent(NotificationCompat.Builder notificationBuilder, Bundle notificationExtras) {
     if (notificationExtras != null) {
+      AppboyLogger.d(TAG, "Setting title for notification");
       notificationBuilder.setContentTitle(notificationExtras.getString(Constants.APPBOY_PUSH_TITLE_KEY));
     }
   }
@@ -358,6 +397,7 @@ public class AppboyNotificationUtils {
    */
   public static void setContentIfPresent(NotificationCompat.Builder notificationBuilder, Bundle notificationExtras) {
     if (notificationExtras != null) {
+      AppboyLogger.d(TAG, "Setting content for notification");
       notificationBuilder.setContentText(notificationExtras.getString(Constants.APPBOY_PUSH_CONTENT_KEY));
     }
   }
@@ -367,6 +407,7 @@ public class AppboyNotificationUtils {
    */
   public static void setTickerIfPresent(NotificationCompat.Builder notificationBuilder, Bundle notificationExtras) {
     if (notificationExtras != null) {
+      AppboyLogger.d(TAG, "Setting ticker for notification");
       notificationBuilder.setTicker(notificationExtras.getString(Constants.APPBOY_PUSH_TITLE_KEY));
     }
   }
@@ -394,24 +435,26 @@ public class AppboyNotificationUtils {
 
   /**
    * Sets the icon used in the notification bar itself.
-   * If a drawable defined in appboy.xml is found, we use that.  Otherwise, fall back to the application icon.
+   * If a drawable defined in appboy.xml is found, we use that. Otherwise, fall back to the application icon.
    *
    * @return the resource id of the small icon to be used.
    */
-  public static int setSmallIcon(XmlAppConfigurationProvider appConfigurationProvider, NotificationCompat.Builder notificationBuilder) {
+  public static int setSmallIcon(AppboyConfigurationProvider appConfigurationProvider, NotificationCompat.Builder notificationBuilder) {
     int smallNotificationIconResourceId = appConfigurationProvider.getSmallNotificationIconResourceId();
     if (smallNotificationIconResourceId == 0) {
       AppboyLogger.d(TAG, "Small notification icon resource was not found. Will use the app icon when "
           + "displaying notifications.");
       smallNotificationIconResourceId = appConfigurationProvider.getApplicationIconResourceId();
+    } else {
+      AppboyLogger.d(TAG, "Setting small icon for notification via resource id");
     }
     notificationBuilder.setSmallIcon(smallNotificationIconResourceId);
     return smallNotificationIconResourceId;
   }
 
   /**
-   * Set large icon for devices on Honeycomb and above.  We use the large icon URL if it exists in
-   * the notificationExtras.  Otherwise we search for a drawable defined in appboy.xml.  If that
+   * Set large icon for devices on Honeycomb and above. We use the large icon URL if it exists in
+   * the notificationExtras. Otherwise we search for a drawable defined in appboy.xml. If that
    * doesn't exists, we do nothing.
    * <p/>
    * Supported HoneyComb+.
@@ -419,19 +462,22 @@ public class AppboyNotificationUtils {
    * @return whether a large icon was successfully set.
    */
   public static boolean setLargeIconIfPresentAndSupported(
-      Context context, XmlAppConfigurationProvider appConfigurationProvider,
+      Context context, AppboyConfigurationProvider appConfigurationProvider,
       NotificationCompat.Builder notificationBuilder, Bundle notificationExtras) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+      AppboyLogger.d(TAG, "Setting large icon for notification not supported on this android version");
       return false;
     }
     try {
       if (notificationExtras != null
           && notificationExtras.containsKey(Constants.APPBOY_PUSH_LARGE_ICON_KEY)) {
+        AppboyLogger.d(TAG, "Setting large icon for notification");
         String bitmapUrl = notificationExtras.getString(Constants.APPBOY_PUSH_LARGE_ICON_KEY);
         Bitmap largeNotificationBitmap = AppboyImageUtils.getBitmap(Uri.parse(bitmapUrl));
         notificationBuilder.setLargeIcon(largeNotificationBitmap);
         return true;
       }
+      AppboyLogger.d(TAG, "Large icon bitmap url not present in extras. Attempting to use resource id instead.");
       int largeNotificationIconResourceId = appConfigurationProvider
           .getLargeNotificationIconResourceId();
       if (largeNotificationIconResourceId != 0) {
@@ -439,19 +485,23 @@ public class AppboyNotificationUtils {
             largeNotificationIconResourceId);
         notificationBuilder.setLargeIcon(largeNotificationBitmap);
         return true;
+      } else {
+        AppboyLogger.d(TAG, "Large icon resource id not present for notification");
       }
     } catch (Exception e) {
       AppboyLogger.e(TAG, "Error setting large notification icon", e);
     }
+
+    AppboyLogger.d(TAG, "Large icon not set for notification");
     return false;
   }
 
   /**
-   * @Deprecated use {@link #setLargeIconIfPresentAndSupported(Context, XmlAppConfigurationProvider, NotificationCompat.Builder, Bundle)}
+   * @Deprecated use {@link #setLargeIconIfPresentAndSupported(Context, AppboyConfigurationProvider, NotificationCompat.Builder, Bundle)}
    */
   @Deprecated
   public static boolean setLargeIconIfPresentAndSupported(
-      Context context, XmlAppConfigurationProvider appConfigurationProvider,
+      Context context, AppboyConfigurationProvider appConfigurationProvider,
       NotificationCompat.Builder notificationBuilder) {
     return setLargeIconIfPresentAndSupported(context, appConfigurationProvider, notificationBuilder, null);
   }
@@ -463,19 +513,23 @@ public class AppboyNotificationUtils {
    */
   public static void setSoundIfPresentAndSupported(NotificationCompat.Builder notificationBuilder, Bundle notificationExtras) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-      if (notificationExtras != null) {
+      if (notificationExtras != null && notificationExtras.containsKey(Constants.APPBOY_PUSH_NOTIFICATION_SOUND_KEY)) {
         // Retrieve sound uri if included in notificationExtras bundle.
-        if (notificationExtras.containsKey(Constants.APPBOY_PUSH_NOTIFICATION_SOUND_KEY)) {
-          String soundUri = notificationExtras.getString(Constants.APPBOY_PUSH_NOTIFICATION_SOUND_KEY);
-          if (soundUri != null) {
-            if (soundUri.equals(Constants.APPBOY_PUSH_NOTIFICATION_SOUND_DEFAULT_VALUE)) {
-              notificationBuilder.setDefaults(Notification.DEFAULT_SOUND);
-            } else {
-              notificationBuilder.setSound(Uri.parse(soundUri));
-            }
+        String soundUri = notificationExtras.getString(Constants.APPBOY_PUSH_NOTIFICATION_SOUND_KEY);
+        if (soundUri != null) {
+          if (soundUri.equals(Constants.APPBOY_PUSH_NOTIFICATION_SOUND_DEFAULT_VALUE)) {
+            AppboyLogger.d(TAG, "Setting default sound for notification.");
+            notificationBuilder.setDefaults(Notification.DEFAULT_SOUND);
+          } else {
+            AppboyLogger.d(TAG, "Setting sound for notification via uri.");
+            notificationBuilder.setSound(Uri.parse(soundUri));
           }
         }
+      } else {
+        AppboyLogger.d(TAG, "Sound key not present in notification extras. Not setting sound for notification.");
       }
+    } else {
+      AppboyLogger.d(TAG, "Notification sound not supported on this android version. Not setting sound for notification.");
     }
   }
 
@@ -486,14 +540,15 @@ public class AppboyNotificationUtils {
    */
   public static void setSummaryTextIfPresentAndSupported(NotificationCompat.Builder notificationBuilder, Bundle notificationExtras) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-      if (notificationExtras != null) {
+      if (notificationExtras != null && notificationExtras.containsKey(Constants.APPBOY_PUSH_SUMMARY_TEXT_KEY)) {
         // Retrieve summary text if included in notificationExtras bundle.
-        if (notificationExtras.containsKey(Constants.APPBOY_PUSH_SUMMARY_TEXT_KEY)) {
-          String summaryText = notificationExtras.getString(Constants.APPBOY_PUSH_SUMMARY_TEXT_KEY);
-          if (summaryText != null) {
-            notificationBuilder.setSubText(summaryText);
-          }
+        String summaryText = notificationExtras.getString(Constants.APPBOY_PUSH_SUMMARY_TEXT_KEY);
+        if (summaryText != null) {
+          AppboyLogger.d(TAG, "Setting summary text for notification");
+          notificationBuilder.setSubText(summaryText);
         }
+      } else {
+        AppboyLogger.d(TAG, "Summary text not present in notification extras. Not setting summary text for notification.");
       }
     }
   }
@@ -506,6 +561,7 @@ public class AppboyNotificationUtils {
   public static void setPriorityIfPresentAndSupported(NotificationCompat.Builder notificationBuilder, Bundle notificationExtras) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
       if (notificationExtras != null) {
+        AppboyLogger.d(TAG, "Setting priority for notification");
         notificationBuilder.setPriority(AppboyNotificationUtils.getNotificationPriority(notificationExtras));
       }
     }
@@ -522,6 +578,7 @@ public class AppboyNotificationUtils {
   public static void setStyleIfSupported(Context context, NotificationCompat.Builder notificationBuilder, Bundle notificationExtras, Bundle appboyExtras) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
       if (notificationExtras != null) {
+        AppboyLogger.d(TAG, "Setting style for notification");
         NotificationCompat.Style style = AppboyNotificationStyleFactory.getBigNotificationStyle(context, notificationExtras, appboyExtras);
         notificationBuilder.setStyle(style);
       }
@@ -529,25 +586,27 @@ public class AppboyNotificationUtils {
   }
 
   /**
-   * Set accent color for devices on Lollipop and above.  We use the push-specific accent color if it exists in the notificationExtras,
+   * Set accent color for devices on Lollipop and above. We use the push-specific accent color if it exists in the notificationExtras,
    * otherwise we search for a default set in appboy.xml or don't set the color at all (and the system notification gray
    * default is used).
    * <p/>
    * Supported Lollipop+.
    */
-  public static void setAccentColorIfPresentAndSupported(XmlAppConfigurationProvider appConfigurationProvider, NotificationCompat.Builder notificationBuilder, Bundle notificationExtras) {
+  public static void setAccentColorIfPresentAndSupported(AppboyConfigurationProvider appConfigurationProvider, NotificationCompat.Builder notificationBuilder, Bundle notificationExtras) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       if (notificationExtras != null && notificationExtras.containsKey(Constants.APPBOY_PUSH_ACCENT_KEY)) {
         // Color is an unsigned integer, so we first parse it as a long.
+        AppboyLogger.d(TAG, "Using accent color for notification from extras bundle");
         notificationBuilder.setColor((int) Long.parseLong(notificationExtras.getString(Constants.APPBOY_PUSH_ACCENT_KEY)));
       } else {
+        AppboyLogger.d(TAG, "Using default accent color for notification");
         notificationBuilder.setColor(appConfigurationProvider.getDefaultNotificationAccentColor());
       }
     }
   }
 
   /**
-   * Set category for devices on Lollipop and above.  Category is one of the predefined notification categories (see the CATEGORY_* constants in Notification)
+   * Set category for devices on Lollipop and above. Category is one of the predefined notification categories (see the CATEGORY_* constants in Notification)
    * that best describes a Notification. May be used by the system for ranking and filtering.
    * <p/>
    * Supported Lollipop+.
@@ -555,9 +614,14 @@ public class AppboyNotificationUtils {
   public static void setCategoryIfPresentAndSupported(NotificationCompat.Builder notificationBuilder, Bundle notificationExtras) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       if (notificationExtras != null && notificationExtras.containsKey(Constants.APPBOY_PUSH_CATEGORY_KEY)) {
+        AppboyLogger.d(TAG, "Setting category for notification");
         String notificationCategory = notificationExtras.getString(Constants.APPBOY_PUSH_CATEGORY_KEY);
         notificationBuilder.setCategory(notificationCategory);
+      } else {
+        AppboyLogger.d(TAG, "Category not present in notification extras. Not setting category for notification.");
       }
+    } else {
+      AppboyLogger.d(TAG, "Notification category not supported on this android version. Not setting category for notification.");
     }
   }
 
@@ -580,6 +644,7 @@ public class AppboyNotificationUtils {
         try {
           int visibility = Integer.parseInt(notificationExtras.getString(Constants.APPBOY_PUSH_VISIBILITY_KEY));
           if (isValidNotificationVisibility(visibility)) {
+            AppboyLogger.d(TAG, "Setting visibility for notification");
             notificationBuilder.setVisibility(visibility);
           } else {
             AppboyLogger.e(TAG, String.format("Received invalid notification visibility %d", visibility));
@@ -588,6 +653,8 @@ public class AppboyNotificationUtils {
           AppboyLogger.e(TAG, "Failed to parse visibility from notificationExtras", e);
         }
       }
+    } else {
+      AppboyLogger.d(TAG, "Notification visibility not supported on this android version. Not setting visibility for notification.");
     }
   }
 
@@ -596,9 +663,8 @@ public class AppboyNotificationUtils {
    * <p/>
    * Supported Lollipop+.
    */
-  public static void setPublicVersionIfPresentAndSupported(
-      Context context, XmlAppConfigurationProvider xmlAppConfigurationProvider,
-      NotificationCompat.Builder notificationBuilder, Bundle notificationExtras) {
+  public static void setPublicVersionIfPresentAndSupported(Context context, AppboyConfigurationProvider appboyConfigurationProvider,
+                                                           NotificationCompat.Builder notificationBuilder, Bundle notificationExtras) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       if (notificationExtras != null && notificationExtras.containsKey(Constants.APPBOY_PUSH_PUBLIC_NOTIFICATION_KEY)) {
         String publicNotificationExtrasString = notificationExtras.getString(Constants.APPBOY_PUSH_PUBLIC_NOTIFICATION_KEY);
@@ -607,8 +673,8 @@ public class AppboyNotificationUtils {
         setContentIfPresent(publicNotificationBuilder, publicNotificationExtras);
         setTitleIfPresent(publicNotificationBuilder, publicNotificationExtras);
         setSummaryTextIfPresentAndSupported(publicNotificationBuilder, publicNotificationExtras);
-        setSmallIcon(xmlAppConfigurationProvider, publicNotificationBuilder);
-        setAccentColorIfPresentAndSupported(xmlAppConfigurationProvider, publicNotificationBuilder, publicNotificationExtras);
+        setSmallIcon(appboyConfigurationProvider, publicNotificationBuilder);
+        setAccentColorIfPresentAndSupported(appboyConfigurationProvider, publicNotificationBuilder, publicNotificationExtras);
         notificationBuilder.setPublicVersion(publicNotificationBuilder.build());
       }
     }
@@ -648,7 +714,7 @@ public class AppboyNotificationUtils {
   }
 
   /**
-   * Handles a request to cancel a push notification in the notification center.  Called by GCM/ADM receiver when an
+   * Handles a request to cancel a push notification in the notification center. Called by GCM/ADM receiver when an
    * Appboy cancel notification intent is received.
    * <p/>
    * Any existing notification in the notification center with the integer Id specified in the
@@ -657,12 +723,13 @@ public class AppboyNotificationUtils {
    * If no Id is found, the defaut Appboy notification Id is used.
    *
    * @param context
-   * @param intent  the cancel notification intent
+   * @param intent the cancel notification intent
    */
   public static void handleCancelNotificationAction(Context context, Intent intent) {
     try {
       if (intent.hasExtra(Constants.APPBOY_PUSH_NOTIFICATION_ID)) {
         int notificationId = intent.getIntExtra(Constants.APPBOY_PUSH_NOTIFICATION_ID, Constants.APPBOY_DEFAULT_NOTIFICATION_ID);
+        AppboyLogger.d(TAG, String.format("Cancelling notification action with id: %d", notificationId));
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.cancel(Constants.APPBOY_PUSH_NOTIFICATION_TAG, notificationId);
       }
@@ -684,6 +751,7 @@ public class AppboyNotificationUtils {
    */
   public static void cancelNotification(Context context, int notificationId) {
     try {
+      AppboyLogger.d(TAG, String.format("Cancelling notification action with id: %d", notificationId));
       Intent cancelNotificationIntent = new Intent(Constants.APPBOY_CANCEL_NOTIFICATION_ACTION).setClass(context, AppboyNotificationUtils.getNotificationReceiverClass());
       cancelNotificationIntent.putExtra(Constants.APPBOY_PUSH_NOTIFICATION_ID, notificationId);
       context.sendBroadcast(cancelNotificationIntent);
@@ -745,10 +813,11 @@ public class AppboyNotificationUtils {
    * The broadcast message action is <host-app-package-name>.intent.APPBOY_NOTIFICATION_OPENED.
    *
    * @param context
-   * @param intent  the internal notification clicked intent constructed in
+   * @param intent the internal notification clicked intent constructed in
    *                {@link #setContentIntentIfPresent}
    */
   static void sendNotificationOpenedBroadcast(Context context, Intent intent) {
+    AppboyLogger.d(TAG, "Sending notification opened broadcast");
     String pushOpenedAction = context.getPackageName() + AppboyNotificationUtils.APPBOY_NOTIFICATION_OPENED_SUFFIX;
     Intent pushOpenedIntent = new Intent(pushOpenedAction);
     if (intent.getExtras() != null) {
@@ -761,7 +830,7 @@ public class AppboyNotificationUtils {
    * Logs a push notification open.
    *
    * @param context
-   * @param intent  the internal notification clicked intent constructed in
+   * @param intent the internal notification clicked intent constructed in
    *                {@link #setContentIntentIfPresent}
    */
   private static void logNotificationOpened(Context context, Intent intent) {

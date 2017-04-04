@@ -16,16 +16,16 @@ import android.widget.ImageSwitcher;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-
+import android.widget.ViewSwitcher;
 import com.appboy.Appboy;
 import com.appboy.Constants;
+import com.appboy.configuration.AppboyConfigurationProvider;
 import com.appboy.models.cards.Card;
 import com.appboy.support.AppboyLogger;
-import com.appboy.support.PackageUtils;
-import com.appboy.support.StringUtils;
 import com.appboy.ui.R;
 import com.appboy.ui.actions.IAction;
 import com.appboy.ui.feed.AppboyFeedManager;
+import com.appboy.ui.feed.AppboyImageSwitcher;
 import com.appboy.ui.support.FrescoLibraryUtils;
 import com.facebook.drawee.generic.RoundingParams;
 import com.appboy.ui.support.ViewUtils;
@@ -108,19 +108,21 @@ public abstract class BaseCardView<T extends Card> extends RelativeLayout implem
         // read/unread functionality. Views that don't have the indicator (like banner views) won't have the image switcher
         // in them and thus we do the null-check below.
         mImageSwitcher = (ImageView) findViewById(R.id.com_appboy_newsfeed_item_read_indicator_image_switcher);
+        if (mImageSwitcher != null) {
+          mImageSwitcher.setFactory(new ViewSwitcher.ViewFactory() {
+            @Override
+            public View makeView() {
+              return new ImageView(mContext.getApplicationContext());
+            }
+          });
+        }
 
         // If the visual indicator on cards shouldn't be on, due to the xml setting in appboy.xml, then set the
         // imageSwitcher to GONE to hide the indicator UI.
-
         // Read the setting from the appboy.xml if we don't already have a value.
         if (unreadCardVisualIndicatorOn == null) {
-            int resId = mContext.getResources().getIdentifier(COM_APPBOY_NEWSFEED_UNREAD_VISUAL_INDICATOR_ON, "bool", PackageUtils.getResourcePackageName(mContext));
-            if (resId != 0) {
-                unreadCardVisualIndicatorOn = mContext.getResources().getBoolean(resId);
-            } else {
-                // If the xml setting isn't present, default to true.
-                unreadCardVisualIndicatorOn = true;
-            }
+          AppboyConfigurationProvider configurationProvider = new AppboyConfigurationProvider(context);
+          unreadCardVisualIndicatorOn = configurationProvider.getIsNewsfeedVisualIndicatorOn();
         }
 
         // If the setting is false, then hide the indicator.
@@ -140,30 +142,35 @@ public abstract class BaseCardView<T extends Card> extends RelativeLayout implem
         setCardViewedIndicator();
     }
 
-    /**
-     * Checks to see if the card object is viewed and if so, sets the read/unread status
-     * indicator image. If the card is null, does nothing.
-     */
-    private void setCardViewedIndicator() {
-        if (getCard() != null) {
-            if (mImageSwitcher != null) {
-                int resourceId;
-                if (getCard().isRead()) {
-                    if (iconReadDrawable != null) {
-                        mImageSwitcher.setImageDrawable(iconReadDrawable);
-                    }
-                } else {
-                    if (iconUnreadDrawable != null){
-                        mImageSwitcher.setImageDrawable(iconUnreadDrawable);
-                    }
-                }
-            } else {
-                AppboyLogger.d(TAG, "The imageSwitcher for the read/unread feature is null. Did you include it in your xml?");
-            }
+  /**
+   * Checks to see if the card object is viewed and if so, sets the read/unread status
+   * indicator image. If the card is null, does nothing.
+   */
+  private void setCardViewedIndicator() {
+    if (getCard() != null) {
+      if (mImageSwitcher != null) {
+        AppboyLogger.d(TAG, "Setting the read/unread indicator for the card.");
+        if (getCard().isRead()) {
+          if (mImageSwitcher.getReadIcon() != null) {
+            mImageSwitcher.setImageDrawable(mImageSwitcher.getReadIcon());
+          } else {
+            mImageSwitcher.setImageResource(R.drawable.icon_read);
+          }
+          mImageSwitcher.setTag("icon_read");
         } else {
-            AppboyLogger.d(TAG, "The card is null.");
+          if (mImageSwitcher.getUnReadIcon() != null) {
+            mImageSwitcher.setImageDrawable(mImageSwitcher.getUnReadIcon());
+            return;
+          } else {
+            mImageSwitcher.setImageResource(R.drawable.icon_unread);
+          }
+          mImageSwitcher.setTag("icon_unread");
         }
+      }
+    } else {
+      AppboyLogger.d(TAG, "The card is null.");
     }
+  }
 
     protected abstract int getLayoutResource();
 
@@ -181,15 +188,15 @@ public abstract class BaseCardView<T extends Card> extends RelativeLayout implem
         return mCard;
     }
 
-    void setOptionalTextView(TextView view, String value) {
-        if (value != null && !value.trim().equals(StringUtils.EMPTY_STRING)) {
-            view.setText(value);
-            view.setVisibility(VISIBLE);
-        } else {
-            view.setText(StringUtils.EMPTY_STRING);
-            view.setVisibility(GONE);
-        }
+  void setOptionalTextView(TextView view, String value) {
+    if (value != null && !value.trim().equals("")) {
+      view.setText(value);
+      view.setVisibility(VISIBLE);
+    } else {
+      view.setText("");
+      view.setVisibility(GONE);
     }
+  }
 
     void safeSetBackground(Drawable background) {
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN) {

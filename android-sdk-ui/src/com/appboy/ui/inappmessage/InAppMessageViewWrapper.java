@@ -12,7 +12,6 @@ import com.appboy.Constants;
 import com.appboy.enums.inappmessage.DismissType;
 import com.appboy.enums.inappmessage.SlideFrom;
 import com.appboy.models.IInAppMessage;
-import com.appboy.models.IInAppMessageHtml;
 import com.appboy.models.IInAppMessageImmersive;
 import com.appboy.models.InAppMessageSlideup;
 import com.appboy.models.MessageButton;
@@ -21,6 +20,7 @@ import com.appboy.ui.inappmessage.listeners.IInAppMessageViewLifecycleListener;
 import com.appboy.ui.inappmessage.listeners.SimpleSwipeDismissTouchListener;
 import com.appboy.ui.inappmessage.listeners.SwipeDismissTouchListener;
 import com.appboy.ui.inappmessage.listeners.TouchAwareSwipeDismissTouchListener;
+import com.appboy.ui.inappmessage.views.AppboyInAppMessageHtmlBaseView;
 import com.appboy.ui.support.AnimationUtils;
 import com.appboy.ui.support.ViewUtils;
 
@@ -41,7 +41,7 @@ public class InAppMessageViewWrapper implements IInAppMessageViewWrapper {
   private boolean mIsAnimatingClose;
 
   /**
-   * Constructor for base and slideup view wrappers.  Adds click listeners to the in-app message view and
+   * Constructor for base and slideup view wrappers. Adds click listeners to the in-app message view and
    * adds swipe functionality to slideup in-app messages.
    *
    * @param inAppMessageView In-app message top level view.
@@ -87,7 +87,7 @@ public class InAppMessageViewWrapper implements IInAppMessageViewWrapper {
   }
 
   /**
-   * Constructor for immersive in-app message view wrappers.  Adds listeners to an optional close button and
+   * Constructor for immersive in-app message view wrappers. Adds listeners to an optional close button and
    * message button views.
    *
    * @param inAppMessageView
@@ -119,13 +119,13 @@ public class InAppMessageViewWrapper implements IInAppMessageViewWrapper {
 
   @Override
   public void open(Activity activity) {
-    // Retrieve the FrameLayout view which will display the in-app message and its height.  The
+    // Retrieve the FrameLayout view which will display the in-app message and its height. The
     // content FrameLayout contains the activity's top-level layout as its first child.
     final FrameLayout frameLayout = (FrameLayout) activity.getWindow().getDecorView().findViewById(android.R.id.content);
     int frameLayoutHeight = frameLayout.getHeight();
     final int displayHeight = ViewUtils.getDisplayHeight(activity);
 
-    // If the FrameLayout height is 0, that implies it hasn't been drawn yet.  We add a
+    // If the FrameLayout height is 0, that implies it hasn't been drawn yet. We add a
     // ViewTreeObserver to wait until its drawn so we can get a proper measurement.
     if (frameLayoutHeight == 0) {
       ViewTreeObserver viewTreeObserver = frameLayout.getViewTreeObserver();
@@ -152,10 +152,6 @@ public class InAppMessageViewWrapper implements IInAppMessageViewWrapper {
   private void open(FrameLayout frameLayout, int displayHeight) {
     mInAppMessageViewLifecycleListener.beforeOpened(mInAppMessageView, mInAppMessage);
     AppboyLogger.d(TAG, "Adding In-app message view to root FrameLayout.");
-    if (mInAppMessage instanceof IInAppMessageImmersive || mInAppMessage instanceof IInAppMessageHtml) {
-      mInAppMessageView.setFocusableInTouchMode(true);
-      mInAppMessageView.requestFocus();
-    }
     frameLayout.addView(mInAppMessageView, getLayoutParams(frameLayout, displayHeight));
     if (mInAppMessage.getAnimateIn()) {
       AppboyLogger.d(TAG, "In-app message view will animate into the visible area.");
@@ -167,7 +163,20 @@ public class InAppMessageViewWrapper implements IInAppMessageViewWrapper {
       if (mInAppMessage.getDismissType() == DismissType.AUTO_DISMISS) {
         addDismissRunnable();
       }
+      mInAppMessageView.setFocusableInTouchMode(true);
+      mInAppMessageView.requestFocus();
+      announceForAccessibilityIfNecessary();
       mInAppMessageViewLifecycleListener.afterOpened(mInAppMessageView, mInAppMessage);
+    }
+  }
+
+  private void announceForAccessibilityIfNecessary() {
+    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN) {
+      if (mInAppMessageView instanceof IInAppMessageImmersiveView) {
+        mInAppMessageView.announceForAccessibility(mInAppMessage.getMessage());
+      } else if (mInAppMessageView instanceof AppboyInAppMessageHtmlBaseView) {
+        mInAppMessageView.announceForAccessibility("In-app message displayed.");
+      }
     }
   }
 
@@ -306,8 +315,8 @@ public class InAppMessageViewWrapper implements IInAppMessageViewWrapper {
   }
 
   /**
-   * Instantiates and executes the correct animation for the current in-app message.  Slideup-type
-   * messages slide in from the top or bottom of the view.  Other in-app messages fade in
+   * Instantiates and executes the correct animation for the current in-app message. Slideup-type
+   * messages slide in from the top or bottom of the view. Other in-app messages fade in
    * and out of view.
    *
    * @param opening
@@ -334,13 +343,16 @@ public class InAppMessageViewWrapper implements IInAppMessageViewWrapper {
         public void onAnimationStart(Animation animation) {}
 
         // This lifecycle callback has been observed to not be called during slideup animations
-        // on occasion.  Do not add any code that *MUST* be executed here.
+        // on occasion. Do not add any code that *MUST* be executed here.
         @Override
         public void onAnimationEnd(Animation animation) {
           if (mInAppMessage.getDismissType() == DismissType.AUTO_DISMISS) {
             addDismissRunnable();
           }
           AppboyLogger.d(TAG, "In-app message animated into view.");
+          mInAppMessageView.setFocusableInTouchMode(true);
+          mInAppMessageView.requestFocus();
+          announceForAccessibilityIfNecessary();
           mInAppMessageViewLifecycleListener.afterOpened(mInAppMessageView, mInAppMessage);
         }
 
@@ -369,7 +381,7 @@ public class InAppMessageViewWrapper implements IInAppMessageViewWrapper {
   /**
    * Adds swipe event handling to the SimpleSwipeDismissTouchListener.
    *
-   * Used in API levels 11 and below.  Detected swipe left and right events
+   * Used in API levels 11 and below. Detected swipe left and right events
    * cause the slideup inapp message to animate off the screen in the direction of the swipe.
    */
   private SimpleSwipeDismissTouchListener getSimpleSwipeListener() {

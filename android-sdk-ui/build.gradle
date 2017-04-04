@@ -2,25 +2,24 @@ apply plugin: 'com.android.library'
 apply plugin: 'android-maven'
 
 dependencies {
-    compile files('libs/appboy.jar')
-    // Note: This requires the Android Support Repository to be installed, please see the README.md. The jar is
-    // also available in the libs/ directory to help support people who are using older build systems.
-    compile 'com.android.support:support-v13:23.3.0'
-    compile 'com.android.support:support-v4:23.3.0'
-    provided("com.facebook.fresco:fresco:0.9.0"){
-        exclude group: 'com.android.support', module: 'support-v4'
-    }
+  compile files('libs/appboy.jar')
+  compile 'com.appboy:android-sdk-base:1.19.+'
+  compile 'com.android.support:support-v13:23.3.0'
+  compile 'com.android.support:support-v4:23.3.0'
+  provided("com.facebook.fresco:fresco:0.9.0"){
+    exclude group: 'com.android.support', module: 'support-v4'
+  }
 }
 
 android {
-  compileSdkVersion 23
+  compileSdkVersion 24
   buildToolsVersion '25.0.0'
 
-    defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 23
-        consumerProguardFiles 'appboy-proguard-rules.pro'
-    }
+  defaultConfig {
+    minSdkVersion 9
+    targetSdkVersion 24
+    consumerProguardFiles 'appboy-proguard-rules.pro'
+  }
 
     sourceSets {
         main.setRoot(".")
