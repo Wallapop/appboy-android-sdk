@@ -53,7 +53,7 @@ public abstract class BaseCardView<T extends Card> extends RelativeLayout implem
     private String mTypeFaceReference;
     private float mRadius;
     protected T mCard;
-    protected ImageView mImageSwitcher;
+    protected AppboyImageSwitcher mImageSwitcher;
     protected boolean mCanUseFresco;
 
 
@@ -87,17 +87,17 @@ public abstract class BaseCardView<T extends Card> extends RelativeLayout implem
                 a.recycle();
             }
         }
-        init();
+        init(context);
     }
 
 
     public BaseCardView(Context context) {
         super(context);
         mContext = context;
-        init();
+        init(context);
     }
 
-    private void init() {
+    private void init(Context context) {
         // Note: this must be called before we inflate any views.
         mCanUseFresco = FrescoLibraryUtils.canUseFresco(mContext);
 
@@ -107,7 +107,7 @@ public abstract class BaseCardView<T extends Card> extends RelativeLayout implem
         // All implementing views of BaseCardView must include this switcher view in order to have the
         // read/unread functionality. Views that don't have the indicator (like banner views) won't have the image switcher
         // in them and thus we do the null-check below.
-        mImageSwitcher = (ImageView) findViewById(R.id.com_appboy_newsfeed_item_read_indicator_image_switcher);
+        mImageSwitcher = (AppboyImageSwitcher) findViewById(R.id.com_appboy_newsfeed_item_read_indicator_image_switcher);
         if (mImageSwitcher != null) {
           mImageSwitcher.setFactory(new ViewSwitcher.ViewFactory() {
             @Override
@@ -340,7 +340,6 @@ public abstract class BaseCardView<T extends Card> extends RelativeLayout implem
     }
 
     /**
-     * Get radius specified by {@link R.styleable.com_appboy_ui_widget_CardView_appboyCardViewRoundedCorners}
      *
      * @return float radius of the background corners of the card
      */
@@ -363,7 +362,6 @@ public abstract class BaseCardView<T extends Card> extends RelativeLayout implem
     }
 
     /**
-     * Ensure that the typeFace specified in {@link R.styleable.com_appboy_ui_widget_CardView_appboyCardViewRoundedCorners}
      * have file extension .ttf
      *
      * @param typeFace key representing a font stored in assets

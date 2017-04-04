@@ -14,6 +14,7 @@ import com.appboy.models.cards.CrossPromotionSmallCard;
 import com.appboy.models.cards.ShortNewsCard;
 import com.appboy.models.cards.TextAnnouncementCard;
 import com.appboy.support.AppboyLogger;
+import com.appboy.ui.R;
 import com.appboy.ui.widget.BannerImageCardView;
 import com.appboy.ui.widget.BaseCardView;
 import com.appboy.ui.widget.DefaultCardView;
@@ -21,6 +22,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.zip.Inflater;
 
 /**
  * Default adapter used to display cards and log card impressions for the Appboy feed.
@@ -47,11 +49,13 @@ public class AppboyListAdapter extends ArrayAdapter<Card> {
 
   private final Context mContext;
   private final Set<String> mCardIdImpressions;
+  private LayoutInflater mInflater;
 
   public AppboyListAdapter(Context context, int layoutResourceId, List<Card> cards) {
     super(context, layoutResourceId, cards);
     mContext = context;
     mCardIdImpressions = new HashSet<String>();
+    mInflater = LayoutInflater.from(mContext);
   }
 
   /**
