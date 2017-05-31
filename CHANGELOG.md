@@ -1,3 +1,65 @@
+## 2.0.3
+
+##### Fixed
+- Improved Appboy singleton initialization performance.
+
+##### Changed
+- Enabled TLS 1.2 for Appboy HTTPS connections running on API 16+ devices. Previously, for devices running on API 16-20, only TLS 1.0 was enabled by default.
+
+## 2.0.2
+
+##### Fixed
+- Fixed a bug where identifying a user while a request was in flight could cause newly written attributes on the old user to be orphaned in local storage.
+
+## 2.0.1
+
+##### Added
+- Added support for displaying Youtube videos inside of HTML in-app messages and the Appboy Webview. For HTML in-app messages, this requires hardware acceleration to be enabled in the Activity where the in-app message is being displayed, please see https://developer.android.com/guide/topics/graphics/hardware-accel.html#controlling. Please note that hardware acceleration is only available on API versions 11 and above.
+- Added the ability to access Appboy's default notification builder instance from custom `IAppboyNotificationFactory` instances. This simplifies making small changes to Appboy's default notification handling.
+- Improved `AppboyImageUtils.getBitmap()` by adding the ability to sample images using preset view bounds.
+
+## 2.0.0
+
+##### Breaking
+- Removed the following deprecated methods and fields:
+  - Removed the unsupported method `Appboy.logShare()`.
+  - Removed `Appboy.logPurchase(String, int)`.
+  - Removed `Appboy.logFeedCardImpression()` and `Appboy.logFeedCardClick()`. Please use `Card.logClick()` and `Card.logImpression()` instead.
+  - Removed the unsupported method `Appboy.getAppboyResourceEndpoint()`.
+  - Removed `IAppboyEndpointProvider.getResourceEndpoint()`. Please update your interface implementation if applicable.
+  - Removed `Appboy.registerAppboyGcmMessages()`. Please use `Appboy.registerAppboyPushMessages()` instead.
+  - Removed `AppboyInAppMessageBaseView.resetMessageMargins()`. Please use `AppboyInAppMessageBaseView.resetMessageMargins(boolean)` instead.
+  - Removed `com.appboy.unity.AppboyUnityGcmReceiver`. To open Appboy push deep links automatically in Unity, set the boolean configuration parameter `com_appboy_inapp_show_inapp_messages_automatically` to true in your `appboy.xml`.
+  - Removed the unsupported method `AppboyUser.setBio()`.
+  - Removed `AppboyUser.setIsSubscribedToEmails()`. Please use `AppboyUser.setEmailNotificationSubscriptionType()` instead.
+  - Removed `Constants.APPBOY_PUSH_CUSTOM_URI_KEY`. Please use `Constants.APPBOY_PUSH_DEEP_LINK_KEY` instead.
+  - Removed `Constants.APPBOY_CANCEL_NOTIFICATION_TAG`.
+  - Removed `com.appboy.ui.actions.ViewAction` and `com.appboy.ui.actions.WebAction`.
+  - Removed `CardCategory.ALL_CATEGORIES`. Please use `CardCategory.getAllCategories()` instead.
+  - Removed `AppboyImageUtils.storePushBitmapInExternalStorage()`.
+  - Removed `AppboyFileUtils.canStoreAssetsLocally()` and `AppboyFileUtils.getApplicationCacheDir()`.
+  - Removed `InAppMessageModal.getModalFrameColor()` and `InAppMessageModal.setModalFrameColor()`. Please use `InAppMessageModal.getFrameColor()` and `InAppMessageModal.setFrameColor()` instead.
+  - Removed `com.appboy.enums.SocialNetwork`.
+  - Removed `AppboyNotificationUtils.getAppboyExtras()`. Please use `AppboyNotificationUtils.getAppboyExtrasWithoutPreprocessing()` instead.
+  - Removed `AppboyNotificationUtils.setLargeIconIfPresentAndSupported(Context, AppboyConfigurationProvider, NotificationCompat.Builder)`. Please use `AppboyNotificationUtils.setLargeIconIfPresentAndSupported(Context, AppboyConfigurationProvider, NotificationCompat.Builder, Bundle)` instead.
+  - Removed `AppboyInAppMessageManager.hideCurrentInAppMessage()`. Please use `AppboyInAppMessageManager.hideCurrentlyDisplayingInAppMessage()` instead.
+- Changed method signatures for `gotoNewsFeed()` and `gotoURI()` in `IAppboyNavigator`. Please update your interface implementation if applicable.
+- Removed `Appboy.unregisterAppboyPushMessages()`. Please use `AppboyUser.setPushNotificationSubscriptionType()` instead.
+- Moved `getAppboyNavigator()` and `setAppboyNavigator()` from `Appboy.java` to `AppboyNavigator.java`.
+- The Appboy Baidu China Push integration now uses the Baidu `channelId` as the push token. Please update your push token registration code to pass `channelId` instead of `userId` into `Appboy.registerAppboyPushMessages()`. The China Push sample has been updated.
+- Removed the `wearboy` and `wear-library` modules. Android Wear 1.0 is no longer supported. Please remove `AppboyWearableListenerService` from your `AndroidManifest.xml` if applicable.
+
+##### Added
+- Added a javascript interface to HTML in-app messages	with ability to	log custom events, purchases, user attributes, navigate users, and close the messaage.
+- Added the ability to set a single delegate object to custom handle all Uris opened by Appboy across in-app messages, push, and the news feed. Your delegate object should implement the `IAppboyNavigator` interface and be set using `AppboyNavigator.setAppboyNavigator()`.
+  - See https://github.com/Appboy/appboy-android-sdk/blob/master/droidboy/src/main/java/com/appboy/sample/CustomAppboyNavigator.java for an example implementation.
+  - You must also provide instructions for Appboy to navigate to your app's (optional) news feed implementation. To use Appboy's default handling, call `AppboyNavigator.executeNewsFeedAction(context, uriAction);`.
+  - Note: Previously, Appboy Navigator was only used when opening in-app messages.
+
+##### Changed
+- Removed the need to manually add declarations for Appboy's news feed and in-app message activities (`AppboyFeedActivity` and `AppboyWebViewActivity`) to the app `AndroidManifest.xml`. If you have these declarations in your manifest, they can be safely removed.
+- Push notifications with web url click actions now open in an in-app webview instead of the external mobile web browser when clicked.
+
 ## 1.19.0
 
 ##### Added
@@ -43,7 +105,7 @@
           .build();
   Appboy.configure(this, appboyConfig);
   ```
-  
+
 ##### Fixed
 - Fixed an issue where in-app messages triggered off of push clicks wouldn't fire because the push click happened before the in-app message configuration was synced to the device.
 
@@ -54,13 +116,13 @@
 ## 1.16.0
 
 ##### Added
-- Adds the ability to toggle outbound network requests from the Appboy SDK online/offline. See `Appboy.setOutboundNetworkRequestsOffline()` for more details.
+- Added the ability to toggle outbound network requests from the Appboy SDK online/offline. See `Appboy.setOutboundNetworkRequestsOffline()` for more details.
 
 ##### Fixed
-- Fixes a bug that caused session sealed automatic data flushes to not occur.
+- Fixed a bug that caused session sealed automatic data flushes to not occur.
 
 ##### Removed
-- Removes Appboy notification action button icons and icon constants.
+- Removed Appboy notification action button icons and icon constants.
 
 ## 1.15.3
 
@@ -171,7 +233,7 @@
 ## 1.13.0
 
 ##### Added
-- Adds support for action-based, locally triggered in-app messages. In-app messages are now sent to the device at session start with associated trigger events. The SDK will display in-app messages in near real-time when the trigger event associated with a message occurs. Trigger events can be app opens, push opens, purchases, and custom events. 
+- Adds support for action-based, locally triggered in-app messages. In-app messages are now sent to the device at session start with associated trigger events. The SDK will display in-app messages in near real-time when the trigger event associated with a message occurs. Trigger events can be app opens, push opens, purchases, and custom events.
 
 ##### Changed
 - Deprecates the old system of requesting in-app message display, now collectively known as 'original' in-app messaging, where messages were limited to displaying at app start.
@@ -338,7 +400,7 @@
 ## 1.6.2
 
 ##### Added
-- Adds a major performance upgrade that reduces CPU usage, memory footprint, and network traffic. 
+- Adds a major performance upgrade that reduces CPU usage, memory footprint, and network traffic.
 - Adds 26 additional languages to localization support for Appboy UI elements.
 - Adds local blocking for blacklisted custom attributes, events, and purchases.  However, blacklisted attributes may still be incremented (removed in release 1.7.3).
 - Adds the ability to set the accent color for notification in Android Lollipop and above.  This can be done by setting the `com_appboy_default_notification_accent_color` integer in your `appboy.xml`.
@@ -512,7 +574,7 @@ New AppboySlideupManager
 Slideup model
 - A key value `extras` java.util.Map has been added to provide additional data to the slideup. `Extras` can be on defined on a per slideup basis via the dashboard.
 - The `SlideFrom` field defines whether the slideup originates from the top or the bottom of the screen.
-- The `DismissType` property controls whether the slideup will dismiss automatically after a period of time has lapsed, or if it will wait for interaction with the user before disappearing. 
+- The `DismissType` property controls whether the slideup will dismiss automatically after a period of time has lapsed, or if it will wait for interaction with the user before disappearing.
   - The slideup will be dismissed automatically after the number of milliseconds defined by the duration field have elapsed if the slideup's DismissType is set to AUTO_DISMISS.
 - The ClickAction field defines the behavior after the slideup is clicked: display a news feed, redirect to a uri, or nothing but dismissing the slideup. This can be changed by calling any of the following methods: `setClickActionToNewsFeed()`, `setClickActionToUri(Uri uri)`, or `setClickActionToNone()`.
 - The uri field defines the uri string that the slide up will open when the ClickAction is set to URI. To change this value, use the `setClickActionToUri(Uri uri)` method.
@@ -547,7 +609,7 @@ Other
 - Adds support for reporting purchases in multiple currencies.
 
 ##### Fixed
-- Fixes a bug in caching custom events to a SQLite database.  
+- Fixes a bug in caching custom events to a SQLite database.
 - Fixes a validation bug when logging custom events.
 
 ##### Changed

@@ -11,6 +11,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.appboy.Constants;
+import com.appboy.enums.Channel;
 import com.appboy.models.cards.CrossPromotionSmallCard;
 import com.appboy.support.StringUtils;
 import com.appboy.ui.R;
@@ -122,7 +123,8 @@ public class CrossPromotionSmallCardView extends BaseCardView<CrossPromotionSmal
     // else, format client-side.
       mPrice.setText(getPriceString(card.getPrice()));
     }
-    mPriceAction = new GooglePlayAppDetailsAction(card.getPackage(), false, card.getAppStore(), card.getKindleId());
+    mPriceAction = new GooglePlayAppDetailsAction(card.getPackage(), card.getOpenUriInWebView(), card.getAppStore(),
+        card.getKindleId(), Channel.NEWS_FEED);
     mPrice.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View view) {

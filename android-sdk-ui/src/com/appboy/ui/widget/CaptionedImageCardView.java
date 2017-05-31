@@ -11,7 +11,6 @@ import android.widget.TextView;
 import com.appboy.Constants;
 import com.appboy.models.cards.CaptionedImageCard;
 import com.appboy.ui.R;
-import com.appboy.ui.actions.ActionFactory;
 import com.appboy.ui.actions.IAction;
 import com.facebook.drawee.view.SimpleDraweeView;
 
@@ -92,7 +91,7 @@ public class CaptionedImageCardView extends BaseCardView<CaptionedImageCard> {
     mTitle.setText(card.getTitle());
     mDescription.setText(card.getDescription());
     setOptionalTextView(mDomain, card.getDomain());
-    mCardAction = ActionFactory.createUriAction(getContext(), card.getUrl());
+    mCardAction = getUriActionForCard(card);
     boolean respectAspectRatio = false;
     if (card.getAspectRatio() != 0f) {
       mAspectRatio = card.getAspectRatio();

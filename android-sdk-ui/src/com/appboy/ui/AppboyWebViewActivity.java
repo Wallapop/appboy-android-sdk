@@ -7,6 +7,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowManager;
 import android.webkit.DownloadListener;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -15,10 +16,11 @@ import android.webkit.WebViewClient;
 import android.widget.RelativeLayout;
 
 import com.appboy.Constants;
+import com.appboy.enums.Channel;
+import com.appboy.support.AppboyFileUtils;
 import com.appboy.support.AppboyLogger;
 import com.appboy.ui.actions.ActionFactory;
 import com.appboy.ui.actions.IAction;
-import com.appboy.ui.actions.WebAction;
 import com.appboy.ui.activities.AppboyBaseActivity;
 
 import java.util.Arrays;
@@ -26,13 +28,18 @@ import java.util.Arrays;
 public class AppboyWebViewActivity extends AppboyBaseActivity {
   private static final String TAG = String.format("%s.%s", Constants.APPBOY_LOG_TAG_PREFIX, AppboyWebViewActivity.class.getName());
   // The Intent extra string containing the URL to open.
-  public static final String URL_EXTRA = "url";
+  /**
+   * @Deprecated use {@link Constants#APPBOY_WEBVIEW_URL_EXTRA} instead.
+   */
+  @Deprecated
+  public static final String URL_EXTRA = Constants.APPBOY_WEBVIEW_URL_EXTRA;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     requestWindowFeature(Window.FEATURE_PROGRESS);
     requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+    setWindowFlagsSafe();
     setContentView(R.layout.com_appboy_webview_activity);
     setProgressBarVisibility(true);
 
@@ -86,9 +93,9 @@ public class AppboyWebViewActivity extends AppboyBaseActivity {
           // If the Uri scheme is not supported by a web action (i.e. if it's not a web url),
           // allow the system to try to open the uri first. This allows the system to handle,
           // for example, redirects to the play store via a "store://" Uri.
-          if(!WebAction.getSupportedSchemes(AppboyWebViewActivity.this).contains(Uri.parse(url).getScheme()) ||
-                  Arrays.asList(WebAction.getUnsupportedAuthority(getApplicationContext())).contains(Uri.parse(url).getAuthority())) {
-            IAction action = ActionFactory.createViewUriAction(url, getIntent().getExtras());
+          if (!AppboyFileUtils.REMOTE_SCHEMES.contains(Uri.parse(url).getScheme())) {
+            IAction action = ActionFactory.createUriActionFromUrlString(url, getIntent().getExtras(), false, Channel.UNKNOWN);
+            // Instead of using AppboyNavigator, just open directly.
             action.execute(view.getContext());
 
             // Close the WebView if the action was executed successfully
@@ -111,6 +118,19 @@ public class AppboyWebViewActivity extends AppboyBaseActivity {
     }
   }
 
+  /**
+   * Enables hardware acceleration for the window. See https://developer.android.com/guide/topics/graphics/hardware-accel.html#controlling . With this flag, we can view Youtube
+   * videos since HTML5 requires hardware acceleration.
+   */
+  @TargetApi(11)
+  private void setWindowFlagsSafe() {
+    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+      getWindow().setFlags(
+          WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+          WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
+    }
+  }
+
   @TargetApi(11)
   private void setZoomSafe(WebSettings webSettings) {
     if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
@@ -121,7 +141,8 @@ public class AppboyWebViewActivity extends AppboyBaseActivity {
   @TargetApi(11)
   private void setWebLayerTypeSafe(WebView webView) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-      webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+      // This enables hardware acceleration if the manifest also has it defined. If not defined, then the layer type will fallback to software
+      webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
     }
   }
 }

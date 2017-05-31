@@ -11,7 +11,6 @@ import android.widget.TextView;
 import com.appboy.Constants;
 import com.appboy.models.cards.TextAnnouncementCard;
 import com.appboy.ui.R;
-import com.appboy.ui.actions.ActionFactory;
 import com.appboy.ui.actions.IAction;
 
 public class TextAnnouncementCardView extends BaseCardView<TextAnnouncementCard> {
@@ -68,12 +67,12 @@ public class TextAnnouncementCardView extends BaseCardView<TextAnnouncementCard>
         return R.layout.com_appboy_text_announcement_card;
     }
 
-    @Override
-    public void onSetCard(final TextAnnouncementCard card) {
-        mTitle.setText(card.getTitle());
-        mDescription.setText(card.getDescription());
-        setOptionalTextView(mDomain, card.getDomain());
-        mCardAction = ActionFactory.createUriAction(getContext(), card.getUrl());
+  @Override
+  public void onSetCard(final TextAnnouncementCard card) {
+    mTitle.setText(card.getTitle());
+    mDescription.setText(card.getDescription());
+    setOptionalTextView(mDomain, card.getDomain());
+    mCardAction = getUriActionForCard(card);
 
     setOnClickListener(new OnClickListener() {
       @Override

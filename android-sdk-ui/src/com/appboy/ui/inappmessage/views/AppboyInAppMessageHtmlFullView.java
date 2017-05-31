@@ -13,9 +13,11 @@ import android.webkit.WebView;
 import com.appboy.Constants;
 import com.appboy.support.AppboyLogger;
 import com.appboy.ui.R;
+import com.appboy.ui.inappmessage.jsinterface.AppboyInAppMessageHtmlJavascriptInterface;
 
 public class AppboyInAppMessageHtmlFullView extends AppboyInAppMessageHtmlBaseView {
   private static final String TAG = String.format("%s.%s", Constants.APPBOY_LOG_TAG_PREFIX, AppboyInAppMessageHtmlFullView.class.getName());
+  public static final String APPBOY_BRIDGE_PREFIX = "appboyInternalBridge";
 
   private WebView mMessageWebView;
 
@@ -35,7 +37,8 @@ public class AppboyInAppMessageHtmlFullView extends AppboyInAppMessageHtmlBaseVi
         webSettings.setLoadWithOverviewMode(true);
         if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
           webSettings.setDisplayZoomControls(false);
-          mMessageWebView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+          // This enables hardware acceleration if the manifest also has it defined. If not defined, then the layer type will fallback to software
+          mMessageWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         }
         mMessageWebView.setBackgroundColor(Color.TRANSPARENT);
 
@@ -48,6 +51,8 @@ public class AppboyInAppMessageHtmlFullView extends AppboyInAppMessageHtmlBaseVi
             return true;
           }
         });
+
+        mMessageWebView.addJavascriptInterface(new AppboyInAppMessageHtmlJavascriptInterface(getContext()), APPBOY_BRIDGE_PREFIX);
       }
     }
     return mMessageWebView;
