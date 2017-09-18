@@ -24,7 +24,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
-
 import com.appboy.Appboy;
 import com.appboy.Constants;
 import com.appboy.enums.CardCategory;
@@ -32,7 +31,6 @@ import com.appboy.sample.util.RuntimePermissionUtils;
 import com.appboy.support.PermissionUtils;
 import com.appboy.ui.AppboyFeedFragment;
 import com.appboy.ui.AppboyFeedbackFragment;
-
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;

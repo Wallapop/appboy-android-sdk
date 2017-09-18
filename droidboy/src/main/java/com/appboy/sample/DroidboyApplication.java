@@ -6,7 +6,6 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.StrictMode;
 import android.util.Log;
-
 import com.appboy.Appboy;
 import com.appboy.AppboyLifecycleCallbackListener;
 import com.appboy.Constants;
@@ -16,7 +15,6 @@ import com.appboy.support.AppboyLogger;
 import com.appboy.support.StringUtils;
 import com.appboy.ui.support.FrescoLibraryUtils;
 import com.facebook.drawee.backends.pipeline.Fresco;
-
 import java.util.Arrays;
 
 public class DroidboyApplication extends Application {

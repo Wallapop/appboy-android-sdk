@@ -2,9 +2,7 @@ package com.appboy.sample;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-
 import com.appboy.support.AppboyLogger;
-
 import io.branch.referral.Branch;
 
 /*

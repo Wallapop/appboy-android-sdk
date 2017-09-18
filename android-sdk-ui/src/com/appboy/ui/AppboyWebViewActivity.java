@@ -12,7 +12,6 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.RelativeLayout;
-
 import com.appboy.Constants;
 import com.appboy.enums.Channel;
 import com.appboy.support.AppboyFileUtils;
@@ -20,8 +19,6 @@ import com.appboy.support.AppboyLogger;
 import com.appboy.ui.actions.ActionFactory;
 import com.appboy.ui.actions.IAction;
 import com.appboy.ui.activities.AppboyBaseActivity;
-
-import java.util.Arrays;
 
 public class AppboyWebViewActivity extends AppboyBaseActivity {
   private static final String TAG = String.format("%s.%s", Constants.APPBOY_LOG_TAG_PREFIX, AppboyWebViewActivity.class.getName());

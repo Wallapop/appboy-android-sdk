@@ -7,7 +7,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
-
 import com.appboy.Appboy;
 import com.appboy.support.StringUtils;
 

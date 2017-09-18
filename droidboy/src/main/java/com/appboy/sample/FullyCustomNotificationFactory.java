@@ -4,7 +4,6 @@ import android.app.Notification;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
-
 import com.appboy.Constants;
 import com.appboy.IAppboyNotificationFactory;
 import com.appboy.configuration.AppboyConfigurationProvider;

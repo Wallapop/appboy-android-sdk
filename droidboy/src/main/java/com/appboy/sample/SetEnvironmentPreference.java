@@ -10,9 +10,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
 import com.appboy.sample.util.LifecycleUtils;
-
 import java.util.Map;
 
 public class SetEnvironmentPreference extends DialogPreference implements DialogInterface.OnDismissListener {

@@ -14,7 +14,6 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
-
 import com.appboy.Appboy;
 import com.appboy.Constants;
 import com.appboy.models.outgoing.AttributionData;
@@ -22,15 +21,12 @@ import com.appboy.sample.util.LifecycleUtils;
 import com.appboy.sample.util.RuntimePermissionUtils;
 import com.appboy.support.StringUtils;
 import com.appboy.ui.feed.AppboyFeedManager;
-
-import org.json.JSONObject;
-
 import io.branch.referral.Branch;
 import io.branch.referral.BranchError;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import org.json.JSONObject;
 
 public class PreferencesActivity extends PreferenceActivity {
   private static final String TAG = String.format("%s.%s", Constants.APPBOY_LOG_TAG_PREFIX, PreferencesActivity.class.getName());

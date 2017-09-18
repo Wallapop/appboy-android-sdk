@@ -2,7 +2,6 @@ package com.appboy.sample;
 
 import android.content.Context;
 import android.content.Intent;
-
 import com.appboy.Constants;
 import com.appboy.IAppboyNavigator;
 import com.appboy.support.StringUtils;

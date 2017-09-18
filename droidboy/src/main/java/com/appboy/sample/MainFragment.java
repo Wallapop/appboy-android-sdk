@@ -10,14 +10,12 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
-
 import com.appboy.Appboy;
 import com.appboy.enums.Gender;
 import com.appboy.enums.Month;
 import com.appboy.enums.NotificationSubscriptionType;
 import com.appboy.models.outgoing.AttributionData;
 import com.appboy.support.StringUtils;
-
 import java.math.BigDecimal;
 import java.util.Date;
 

@@ -2,7 +2,6 @@ package com.appboy.firebasepush;
 
 import android.app.Application;
 import android.util.Log;
-
 import com.appboy.Appboy;
 import com.appboy.AppboyLifecycleCallbackListener;
 import com.appboy.configuration.AppboyConfig;

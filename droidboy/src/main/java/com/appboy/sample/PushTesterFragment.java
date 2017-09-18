@@ -13,7 +13,6 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.Spinner;
-
 import com.appboy.Appboy;
 import com.appboy.Constants;
 import com.appboy.configuration.AppboyConfigurationProvider;
@@ -21,11 +20,9 @@ import com.appboy.push.AppboyNotificationUtils;
 import com.appboy.sample.util.RuntimePermissionUtils;
 import com.appboy.sample.util.SpinnerUtils;
 import com.appboy.support.StringUtils;
-
+import java.security.SecureRandom;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.security.SecureRandom;
 
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public class PushTesterFragment extends Fragment implements AdapterView.OnItemSelectedListener {
