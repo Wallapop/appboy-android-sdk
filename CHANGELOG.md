@@ -1,10 +1,66 @@
-## 2.0.3
+## 2.1.3
+
+##### Important
+- If your app does not target Android O, please use 2.0.x and wait until your app is compatible with Android O and notification channels before upgrading to 2.1.x.
 
 ##### Fixed
-- Improved Appboy singleton initialization performance.
+- Fixed a bug where implicit intents for custom push broadcast receivers would be suppressed in devices running Android O.
+- Updates the Appboy ProGuard configuration to ensure Google Play Services classes required by Geofencing aren't renamed.
+
+## 2.1.2
+
+##### Fixed
+- Fixed a bug where sealed session flushes would not be sent on apps with long session timeouts due to Android O background service limitations.
+
+## 2.1.1
+
+##### Added
+- Added the ability to set a custom API endpoint via `appboy.xml` using the `com_appboy_custom_endpoint` string attribute or via `AppboyConfig.Builder.setCustomEndpoint()`.
+
+##### Fixed
+- Fixed a bug where date custom attributes were formatted in the device's locale, which could result in incorrectly formatted dates. Date custom attributes are now always formatted in `Locale.US`.
+
+## 2.1.0
+
+##### Breaking
+- Updated the minimum SDK version from 9 (Gingerbread) to 14 (Ice Cream Sandwich). 
+  - We recommend that session tracking and In-App Messages registration be done via an `AppboyLifecycleCallbackListener` instance using [`Application.registerActivityLifecycleCallbacks()`](https://developer.android.com/reference/android/app/Application.html#registerActivityLifecycleCallbacks(android.app.Application.ActivityLifecycleCallbacks)).
+- Removed the deprecated field: `AppboyLogger.LogLevel`. Please use `AppboyLogger.setLogLevel()` and `AppboyLogger.getLogLevel()` instead.
+- Updated the v4 support library dependency to version 26.0.0. To download Android Support Libraries versions 26.0.0 and above, you must add the following line to your top-level `build.gradle` repositories block:
+  ```
+  maven {
+    url "https://maven.google.com"
+  }
+  ```
+
+##### Added
+- Added support for Android O notification channels. In the case that an Appboy notification does not contain the id for a notification channel, Appboy will fallback to a default notification channel. Other than the default notification channel, Appboy will not create any channels. All other channels must be programatically defined by the host app.
+  - Note that default notification channel creation will occur even if your app does not target Android O. If you would like to avoid default channel creation until your app targets Android O, do not upgrade to this version.
+  - To set the user facing name of the default Appboy notification channel, please use `AppboyConfig.setDefaultNotificationChannelName()`.
+  - To set the user facing description of the default Appboy notification channel, please use `AppboyConfig.setDefaultNotificationChannelDescription()`.
+
+##### Changed
+- Updated the target SDK version to 26.
+
+## 2.0.5
+
+##### Fixed
+- Fixed a bug where relative links in `href` tags in HTML In-App Messages would get passed as file Uris to the `AppboyNavigator`.
+
+##### Added
+- Added `Double` as a valid value type on `AppboyUser.setCustomUserAttribute()`.
+- Added user aliasing capability. Aliases can be used in the API and dashboard to identify users in addition to their ID.  See the `addAlias` method on [`AppboyUser`](https://appboy.github.io/appboy-android-sdk/javadocs/com/appboy/AppboyUser.html) for more information.
+
+## 2.0.4
+
+##### Changed
+- Made further improvements to Appboy singleton initialization performance.
+
+## 2.0.3
 
 ##### Changed
 - Enabled TLS 1.2 for Appboy HTTPS connections running on API 16+ devices. Previously, for devices running on API 16-20, only TLS 1.0 was enabled by default.
+- Improved Appboy singleton initialization performance.
 
 ## 2.0.2
 

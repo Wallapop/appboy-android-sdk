@@ -88,6 +88,10 @@
             android:summary="@string/log_level_pref_summary"
             android:positiveButtonText="@string/user_dialog_done"
             android:negativeButtonText=""/>
+        <Preference
+            android:key="anonymous_revert"
+            android:title="Revert to Anonymous User"
+            android:summary="Will cause an app restart."/>
     </PreferenceCategory>
 
     <PreferenceCategory
@@ -133,5 +137,35 @@
         <Preference
             android:key="push_token"
             android:title="Push Token"/>
+        <Preference
+            android:key="build_type"
+            android:title="Build Type"/>
+        <Preference
+            android:key="flavor"
+            android:title="Flavor"/>
+        <Preference
+            android:key="version_code"
+            android:title="Version Code"/>
+        <Preference
+            android:key="build_name"
+            android:title="Build Name"/>
+        <Preference
+            android:key="current_user_id"
+            android:title="Current User ID"/>
+        <Preference
+            android:key="api_key_backend"
+            android:title="API Key points to:"/>
+        <Preference
+            android:key="commit_hash"
+            android:title="Commit Hash"/>
+        <Preference
+            android:key="branch_name"
+            android:title="Branch Name"/>
+        <Preference
+            android:key="install_time"
+            android:title="Install Time"/>
+        <Preference
+            android:key="device_id"
+            android:title="Device Id"/>
     </PreferenceCategory>
 </PreferenceScreen>

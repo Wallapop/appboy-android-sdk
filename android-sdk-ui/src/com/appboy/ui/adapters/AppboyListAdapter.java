@@ -1,6 +1,5 @@
 package com.appboy.ui.adapters;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,7 +17,9 @@ import com.appboy.ui.R;
 import com.appboy.ui.widget.BannerImageCardView;
 import com.appboy.ui.widget.BaseCardView;
 import com.appboy.ui.widget.DefaultCardView;
-import java.util.Collection;
+import com.appboy.ui.widget.ShortNewsCardView;
+import com.appboy.ui.widget.TextAnnouncementCardView;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -159,25 +160,13 @@ public class AppboyListAdapter extends ArrayAdapter<Card> {
     }
 
     // Now we add the remainder of the feed.
-    if (android.os.Build.VERSION.SDK_INT < 11) {
-      while (j < newFeedSize) {
-        add(cards.get(j));
-        j++;
-      }
-    } else {
-      addAllBatch(cards.subList(j, newFeedSize));
-    }
+    super.addAll(cards.subList(j, newFeedSize));
     notifyDataSetChanged();
   }
 
   @Override
   public synchronized void add(Card card) {
     super.add(card);
-  }
-
-  @TargetApi(11)
-  private synchronized void addAllBatch(Collection<Card> cards) {
-    super.addAll(cards);
   }
 
   /**

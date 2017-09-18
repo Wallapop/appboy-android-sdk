@@ -1,8 +1,8 @@
 package com.appboy.ui;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ListFragment;
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -31,7 +31,6 @@ import com.appboy.ui.adapters.AppboyListAdapter;
 import java.util.ArrayList;
 import java.util.EnumSet;
 
-@TargetApi(11)
 public class AppboyXamarinFormsFeedFragment extends ListFragment implements SwipeRefreshLayout.OnRefreshListener {
   private static final String TAG = String.format("%s.%s", Constants.APPBOY_LOG_TAG_PREFIX, AppboyXamarinFormsFeedFragment.class.getName());
   private static final int NETWORK_PROBLEM_WARNING_MS = 5000;
@@ -76,15 +75,15 @@ public class AppboyXamarinFormsFeedFragment extends ListFragment implements Swip
   }
 
   @Override
-  public void onAttach(final Activity activity) {
-    super.onAttach(activity);
-    mAppboy = Appboy.getInstance(activity);
+  public void onAttach(final Context context) {
+    super.onAttach(context);
+    mAppboy = Appboy.getInstance(context);
     if (mAdapter == null) {
-      mAdapter = new AppboyListAdapter(activity, R.id.tag, new ArrayList<Card>());
+      mAdapter = new AppboyListAdapter(context, R.id.tag, new ArrayList<Card>());
       mCategories = CardCategory.getAllCategories();
     }
     setRetainInstance(true);
-    mGestureDetector = new GestureDetectorCompat(activity, new FeedGestureListener());
+    mGestureDetector = new GestureDetectorCompat(context, new FeedGestureListener());
   }
 
   @Override

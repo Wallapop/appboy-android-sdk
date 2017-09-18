@@ -6,7 +6,7 @@ android {
 
   defaultConfig {
     applicationId "com.appboy.firebasepush"
-    minSdkVersion rootProject.ext.minSdkVersionForLifecycleListener
+    minSdkVersion rootProject.ext.minSdkVersion
     targetSdkVersion rootProject.ext.targetSdkVersion
     versionCode 1
     versionName "1.0"
@@ -20,9 +20,15 @@ android {
 
 dependencies {
   compile project(':android-sdk-ui')
-  compile "com.android.support:appcompat-v7:${SUPPORT_LIBS_VERSION}"
-  compile "com.google.firebase:firebase-messaging:${PLAY_SERVICES_VERSION}"
-  compile "com.google.firebase:firebase-core:${PLAY_SERVICES_VERSION}"
+  compile ("com.android.support:appcompat-v7:${SUPPORT_LIBS_VERSION}") {
+    exclude group: 'com.android.support', module: 'support-v4'
+  }
+  compile ("com.google.firebase:firebase-messaging:${PLAY_SERVICES_VERSION}") {
+    exclude group: 'com.android.support', module: 'support-v4'
+  }
+  compile ("com.google.firebase:firebase-core:${PLAY_SERVICES_VERSION}") {
+    exclude group: 'com.android.support', module: 'support-v4'
+  }
 }
 
 apply plugin: 'com.google.gms.google-services'
