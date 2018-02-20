@@ -20,8 +20,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.ViewSwitcher;
 import com.appboy.Appboy;
-import com.appboy.Constants;
 import com.appboy.configuration.AppboyConfigurationProvider;
+import com.appboy.enums.AppboyViewBounds;
 import com.appboy.enums.Channel;
 import com.appboy.models.cards.Card;
 import com.appboy.support.AppboyLogger;
@@ -41,10 +41,10 @@ import java.util.Observable;
 import java.util.Observer;
 
 /**
- * Base class for Appboy feed card views
+ * Base class for Braze feed card views
  */
 public abstract class BaseCardView<T extends Card> extends RelativeLayout implements Observer {
-    private static final String TAG = String.format("%s.%s", Constants.APPBOY_LOG_TAG_PREFIX, BaseCardView.class.getName());
+    private static final String TAG = AppboyLogger.getAppboyLogTag(BaseCardView.class);
     private static final int TYPE_FACE_GENERIC_INDEX = 0;
     private static final int TYPE_FACE_TITLE_INDEX = 1;
     private static final int TYPE_FACE_MESSAGE_INDEX = 2;
@@ -95,7 +95,6 @@ public abstract class BaseCardView<T extends Card> extends RelativeLayout implem
         }
         init(context);
     }
-
 
     public BaseCardView(Context context) {
         super(context);
@@ -257,7 +256,7 @@ public abstract class BaseCardView<T extends Card> extends RelativeLayout implem
       return;
     }
 
-    if (!imageUrl.equals(imageView.getTag())) {
+    if (!imageUrl.equals(imageView.getTag(R.string.com_appboy_image_resize_tag_key))) {
       if (aspectRatio != SQUARE_ASPECT_RATIO) {
         // We need to set layout params on the imageView once its layout state is visible. To do this,
         // we obtain the imageView's observer and attach a listener on it for when the view's layout
@@ -278,8 +277,8 @@ public abstract class BaseCardView<T extends Card> extends RelativeLayout implem
       }
 
             imageView.setImageResource(android.R.color.transparent);
-            Appboy.getInstance(getContext()).fetchAndRenderImage(imageUrl, imageView, respectAspectRatio);
-            imageView.setTag(imageUrl);
+            Appboy.getInstance(getContext()).getAppboyImageLoader().renderUrlIntoView(getContext(), imageUrl, imageView, AppboyViewBounds.BASE_CARD_VIEW);
+            imageView.setTag(R.string.com_appboy_image_resize_tag_key, imageUrl);
         }
     }
 
@@ -318,9 +317,9 @@ public abstract class BaseCardView<T extends Card> extends RelativeLayout implem
     }
     if (cardAction != null) {
       if (card.logClick()) {
-        AppboyLogger.d(tag, String.format("Logged click for card %s", card.getId()));
+        AppboyLogger.d(tag, "Logged click for card " + card.getId());
       } else {
-        AppboyLogger.d(tag, String.format("Logging click failed for card %s", card.getId()));
+        AppboyLogger.d(tag, "Logging click failed for card " + card.getId());
       }
       if (!AppboyFeedManager.getInstance().getFeedCardClickActionListener().onFeedCardClicked(context, card, cardAction)) {
         if (cardAction instanceof UriAction) {

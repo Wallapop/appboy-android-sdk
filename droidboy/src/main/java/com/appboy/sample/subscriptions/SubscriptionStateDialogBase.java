@@ -5,7 +5,6 @@ import android.preference.DialogPreference;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.RadioGroup;
-
 import com.appboy.Constants;
 import com.appboy.sample.R;
 

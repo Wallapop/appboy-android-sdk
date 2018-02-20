@@ -2,14 +2,13 @@ package com.appboy.ui;
 
 import android.content.Context;
 
-import com.appboy.Constants;
 import com.appboy.IAppboyNavigator;
 import com.appboy.support.AppboyLogger;
 import com.appboy.ui.actions.NewsfeedAction;
 import com.appboy.ui.actions.UriAction;
 
 public class AppboyNavigator implements IAppboyNavigator {
-  private static final String TAG = String.format("%s.%s", Constants.APPBOY_LOG_TAG_PREFIX, AppboyNavigator.class.getName());
+  private static final String TAG = AppboyLogger.getAppboyLogTag(AppboyNavigator.class);
   private static volatile IAppboyNavigator sDefaultAppboyNavigator = new AppboyNavigator();
   private static volatile IAppboyNavigator sCustomAppboyNavigator;
 
@@ -40,7 +39,7 @@ public class AppboyNavigator implements IAppboyNavigator {
   }
 
   /**
-   * Gets the current IAppboyNavigator class that defines the actions that should be taken when Appboy attempts to
+   * Gets the current IAppboyNavigator class that defines the actions that should be taken when Braze attempts to
    * display the news feed or open a URI from an in-app message. This will be null if none was set.
    *
    * @return The currently set IAppboyNavigator or null if none was set.
@@ -54,7 +53,7 @@ public class AppboyNavigator implements IAppboyNavigator {
   }
 
   /**
-   * Sets the class that defines the actions that should be taken when Appboy attempts to display the news
+   * Sets the class that defines the actions that should be taken when Braze attempts to display the news
    * feed or open a URI from an in-app message.
    *
    * @param appboyNavigator The IAppboyNavigator to use when attempting to display news feed or navigate to

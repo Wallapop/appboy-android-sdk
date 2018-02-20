@@ -65,12 +65,12 @@ public class MainFragment extends Fragment {
     mAliasLabelEditText = (EditText) contentView.findViewById(R.id.com_appboy_sample_set_alias_label_edit_text);
     mUserAliasButton = (Button) contentView.findViewById(R.id.com_appboy_sample_set_user_alias_button);
 
-    // Appboy methods
+    // Braze methods
     mCustomEventOrPurchaseEditText = (EditText) contentView.findViewById(R.id.com_appboy_sample_custom_event_or_purchase_edit_text);
     mCustomEventButton = (Button) contentView.findViewById(R.id.com_appboy_sample_log_custom_event_button);
     mLogPurchaseButton = (Button) contentView.findViewById(R.id.com_appboy_sample_log_purchase_button);
     mSubmitFeedbackButton = (Button) contentView.findViewById(R.id.com_appboy_sample_submit_feedback_button);
-    // Appboy User methods
+    // Braze User methods
     mSetUserAttributesButton = (Button) contentView.findViewById(R.id.com_appboy_sample_set_user_attributes_button);
     mUnsetCustomUserAttributesButton = (Button) contentView.findViewById(R.id.com_appboy_sample_unset_custom_attributes_button);
     mRequestFlushButton = (Button) contentView.findViewById(R.id.com_appboy_sample_request_flush_button);
@@ -130,6 +130,7 @@ public class MainFragment extends Fragment {
         Appboy.getInstance(mContext).getCurrentUser().setEmail("email@test.com");
         Appboy.getInstance(mContext).getCurrentUser().setGender(Gender.FEMALE);
         Appboy.getInstance(mContext).getCurrentUser().setCountry("USA");
+        Appboy.getInstance(mContext).getCurrentUser().setLanguage("cs");
         Appboy.getInstance(mContext).getCurrentUser().setHomeCity("New York");
         Appboy.getInstance(mContext).getCurrentUser().setPhoneNumber("1234567890");
         Appboy.getInstance(mContext).getCurrentUser().setDateOfBirth(1984, Month.AUGUST, 18);

@@ -23,9 +23,6 @@
     <PreferenceCategory
         android:title="@string/network_control_title">
         <Preference
-            android:key="request_inappmessage"
-            android:title="Request In-App Message"/>
-        <Preference
             android:key="data_flush"
             android:title="@string/data_flush_title" />
         <Preference
@@ -91,6 +88,14 @@
         <Preference
             android:key="anonymous_revert"
             android:title="Revert to Anonymous User"
+            android:summary="Will cause an app restart."/>
+        <Preference
+            android:key="enable_fresco_preference_key"
+            android:title="Enables Fresco (GIFs) on next app start"
+            android:summary="Will cause an app restart."/>
+        <Preference
+            android:key="disable_fresco_preference_key"
+            android:title="Disables Fresco (GIFs) on next app start"
             android:summary="Will cause an app restart."/>
     </PreferenceCategory>
 

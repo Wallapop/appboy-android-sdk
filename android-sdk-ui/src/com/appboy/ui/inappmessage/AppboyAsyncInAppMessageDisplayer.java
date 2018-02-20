@@ -5,7 +5,8 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Handler;
 
-import com.appboy.Constants;
+import com.appboy.Appboy;
+import com.appboy.IAppboyImageLoader;
 import com.appboy.enums.AppboyViewBounds;
 import com.appboy.models.IInAppMessage;
 import com.appboy.models.InAppMessageHtmlBase;
@@ -25,7 +26,7 @@ import com.facebook.imagepipeline.request.ImageRequest;
 import java.io.File;
 
 public class AppboyAsyncInAppMessageDisplayer extends AsyncTask<IInAppMessage, Integer, IInAppMessage> {
-  private static final String TAG = String.format("%s.%s", Constants.APPBOY_LOG_TAG_PREFIX, AppboyAsyncInAppMessageDisplayer.class.getName());
+  private static final String TAG = AppboyLogger.getAppboyLogTag(AppboyAsyncInAppMessageDisplayer.class);
 
   @Override
   protected IInAppMessage doInBackground(IInAppMessage... inAppMessages) {
@@ -108,8 +109,8 @@ public class AppboyAsyncInAppMessageDisplayer extends AsyncTask<IInAppMessage, I
       inAppMessageHtml.setLocalAssetsDirectoryUrl(localWebContentUrl);
       return true;
     } else {
-      AppboyLogger.w(TAG, String.format("Download of html content to local directory failed for remote url: %s . Returned local url is: %s",
-          inAppMessageHtml.getAssetsZipRemoteUrl(), localWebContentUrl));
+      AppboyLogger.w(TAG, "Download of html content to local directory failed for remote url: "
+          + inAppMessageHtml.getAssetsZipRemoteUrl() + " . Returned local url is: " + localWebContentUrl);
       return false;
     }
   }
@@ -194,8 +195,6 @@ public class AppboyAsyncInAppMessageDisplayer extends AsyncTask<IInAppMessage, I
         AppboyLogger.i(TAG, "In-app message has remote image url. Downloading.");
 
         // Try to sample the image for slideup and modal in-app messages
-        Context applicationContext = AppboyInAppMessageManager.getInstance().getApplicationContext();
-
         // By default, the image won't be sampled
         AppboyViewBounds viewBounds = AppboyViewBounds.NO_BOUNDS;
 
@@ -205,7 +204,9 @@ public class AppboyAsyncInAppMessageDisplayer extends AsyncTask<IInAppMessage, I
           viewBounds = AppboyViewBounds.IN_APP_MESSAGE_MODAL;
         }
 
-        inAppMessage.setBitmap(AppboyImageUtils.getBitmap(applicationContext, Uri.parse(remoteImageUrl), viewBounds));
+        Context applicationContext = AppboyInAppMessageManager.getInstance().getApplicationContext();
+        IAppboyImageLoader appboyImageLoader = Appboy.getInstance(applicationContext).getAppboyImageLoader();
+        inAppMessage.setBitmap(appboyImageLoader.getBitmapFromUrl(applicationContext, remoteImageUrl, viewBounds));
       } else {
         AppboyLogger.w(TAG, "In-app message has no remote image url. Not downloading image.");
         return true;

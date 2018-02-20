@@ -2,7 +2,7 @@ package com.appboy.unity;
 
 import android.app.Activity;
 import android.content.Intent;
-import com.appboy.Constants;
+
 import com.appboy.models.IInAppMessage;
 import com.appboy.models.MessageButton;
 import com.appboy.support.AppboyLogger;
@@ -10,12 +10,11 @@ import com.appboy.ui.inappmessage.AppboyInAppMessageManager;
 import com.appboy.ui.inappmessage.InAppMessageCloser;
 import com.appboy.ui.inappmessage.InAppMessageOperation;
 import com.appboy.ui.inappmessage.listeners.IInAppMessageManagerListener;
-import com.unity3d.player.UnityPlayerNativeActivity;
 
 public class AppboyUnityNativeInAppMessageManagerListener implements IInAppMessageManagerListener {
-  private static final String TAG = String.format("%s.%s", Constants.APPBOY_LOG_TAG_PREFIX, AppboyUnityNativeInAppMessageManagerListener.class.getName());
+  private static final String TAG = AppboyLogger.getAppboyLogTag(AppboyUnityNativeInAppMessageManagerListener.class);
   private static volatile AppboyUnityNativeInAppMessageManagerListener sInstance;
-  private UnityPlayerNativeActivity mContainerActivity;
+  private Activity mContainerActivity;
   private AppboyOverlayActivity mOverlayActivity;
   private boolean mShowInAppMessagesManually = false;
   private IAppboyUnityInAppMessageListener mAppboyUnityInAppMessageListener;
@@ -49,9 +48,9 @@ public class AppboyUnityNativeInAppMessageManagerListener implements IInAppMessa
    * Call to register a container activity (the game activity) that will be returned to
    * after the in-app message displays.
    *
-   * @param containerActivity a UnityPlayerNativeActivity instance
+   * @param containerActivity an {@link Activity} instance
    */
-  public void registerContainerActivity(UnityPlayerNativeActivity containerActivity) {
+  public void registerContainerActivity(Activity containerActivity) {
     mContainerActivity = containerActivity;
   }
 
@@ -135,6 +134,17 @@ public class AppboyUnityNativeInAppMessageManagerListener implements IInAppMessa
       inAppMessage.setAnimateIn(false);
       return InAppMessageOperation.DISPLAY_NOW;
     } else {
+      if (mAppboyUnityInAppMessageListener != null) {
+        InAppMessageOperation operation = mAppboyUnityInAppMessageListener.beforeInAppMessageDisplayed(inAppMessage);
+        if (InAppMessageOperation.DISPLAY_NOW.equals(operation)) {
+          startOverlayActivity();
+          return InAppMessageOperation.DISPLAY_LATER;
+        } else if (InAppMessageOperation.DISCARD.equals(operation)) {
+          return InAppMessageOperation.DISCARD;
+        } else if (InAppMessageOperation.DISPLAY_LATER.equals(operation)) {
+          return InAppMessageOperation.DISPLAY_LATER;
+        }
+      }
       startOverlayActivity();
       return InAppMessageOperation.DISPLAY_LATER;
     }
@@ -172,11 +182,14 @@ public class AppboyUnityNativeInAppMessageManagerListener implements IInAppMessa
   @Override
   public void onInAppMessageDismissed(IInAppMessage inAppMessage) {
     finishOverlayActivity();
+    if (mAppboyUnityInAppMessageListener != null) {
+      mAppboyUnityInAppMessageListener.onInAppMessageDismissed(inAppMessage);
+    }
   }
 
   /**
    * Allows the client to specify that they will handle the display of in-app messages
-   * themselves. If set, Appboy will not handle the display of incoming in-app messages.
+   * themselves. If set, Braze will not handle the display of incoming in-app messages.
    *
    * @param showInAppMessagesManually whether the client will handle in-app messages
    *                                  themselves.

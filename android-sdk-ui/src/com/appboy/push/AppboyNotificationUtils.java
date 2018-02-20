@@ -1,6 +1,7 @@
 package com.appboy.push;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.AlarmManager;
 import android.app.Notification;
@@ -25,6 +26,7 @@ import com.appboy.AppboyAdmReceiver;
 import com.appboy.AppboyGcmReceiver;
 import com.appboy.AppboyInternal;
 import com.appboy.Constants;
+import com.appboy.IAppboyImageLoader;
 import com.appboy.IAppboyNotificationFactory;
 import com.appboy.configuration.AppboyConfigurationProvider;
 import com.appboy.enums.AppboyViewBounds;
@@ -45,14 +47,14 @@ import org.json.JSONObject;
 import java.util.Iterator;
 
 public class AppboyNotificationUtils {
-  private static final String TAG = String.format("%s.%s", Constants.APPBOY_LOG_TAG_PREFIX, AppboyNotificationUtils.class.getName());
+  private static final String TAG = AppboyLogger.getAppboyLogTag(AppboyNotificationUtils.class);
   private static final String SOURCE_KEY = "source";
   public static final String APPBOY_NOTIFICATION_OPENED_SUFFIX = ".intent.APPBOY_NOTIFICATION_OPENED";
   public static final String APPBOY_NOTIFICATION_RECEIVED_SUFFIX = ".intent.APPBOY_PUSH_RECEIVED";
 
   /**
-   * Handles a push notification click. Called by GCM/ADM receiver when an
-   * Appboy push notification click intent is received.
+   * Handles a push notification click. Called by GCM/ADM receiver when a
+   * Braze push notification click intent is received.
    * <p/>
    * See {@link #logNotificationOpened} and {@link #sendNotificationOpenedBroadcast}
    *
@@ -96,7 +98,7 @@ public class AppboyNotificationUtils {
     // Otherwise, start the intent defined in getStartActivityIntent().
     String deepLink = intent.getStringExtra(Constants.APPBOY_PUSH_DEEP_LINK_KEY);
     if (!StringUtils.isNullOrBlank(deepLink)) {
-      Log.d(TAG, String.format("Found a deep link %s.", deepLink));
+      Log.d(TAG, "Found a deep link " + deepLink);
       boolean useWebView = "true".equalsIgnoreCase(intent.getStringExtra(Constants.APPBOY_PUSH_OPEN_URI_IN_WEBVIEW_KEY));
       Log.d(TAG, "Use webview set to: " + useWebView);
 
@@ -113,15 +115,19 @@ public class AppboyNotificationUtils {
   }
 
   /**
-   * Get the Appboy extras Bundle from the notification extras. Notification extras must be in GCM/ADM format.
+   * Get the Braze extras Bundle from the notification extras. Notification extras must be in GCM/ADM format.
    *
    * @param notificationExtras Notification extras as provided by GCM/ADM.
-   * @return Returns the Appboy extras Bundle from the notification extras. Amazon ADM recursively flattens all JSON messages,
+   * @return Returns the Braze extras Bundle from the notification extras. Amazon ADM recursively flattens all JSON messages,
    * so for Amazon devices we just return a copy of the original bundle.
    */
   public static Bundle getAppboyExtrasWithoutPreprocessing(Bundle notificationExtras) {
     if (notificationExtras == null) {
       return null;
+    }
+    if (notificationExtras.containsKey(Constants.APPBOY_PUSH_STORY_IS_NEWLY_RECEIVED)
+        && !notificationExtras.getBoolean(Constants.APPBOY_PUSH_STORY_IS_NEWLY_RECEIVED)) {
+      return notificationExtras.getBundle(Constants.APPBOY_PUSH_EXTRAS_KEY);
     }
     if (!Constants.IS_AMAZON) {
       return AppboyNotificationUtils.parseJSONStringDictionaryIntoBundle(notificationExtras.getString(Constants.APPBOY_PUSH_EXTRAS_KEY, "{}"));
@@ -161,9 +167,9 @@ public class AppboyNotificationUtils {
   }
 
   /**
-   * Checks the incoming GCM/ADM intent to determine whether this is an Appboy push message.
+   * Checks the incoming GCM/ADM intent to determine whether this is a Braze push message.
    * <p/>
-   * All Appboy push messages must contain an extras entry with key set to "_ab" and value set to "true".
+   * All Braze push messages must contain an extras entry with key set to "_ab" and value set to "true".
    */
   public static boolean isAppboyPushMessage(Intent intent) {
     Bundle extras = intent.getExtras();
@@ -174,11 +180,11 @@ public class AppboyNotificationUtils {
    * Checks the intent received from GCM to determine whether this is a notification message or a
    * data push.
    * <p/>
-   * A notification message is an Appboy push message that displays a notification in the
+   * A notification message is a Braze push message that displays a notification in the
    * notification center (and optionally contains extra information that can be used directly
    * by the app).
    * <p/>
-   * A data push is an Appboy push message that contains only extra information that can
+   * A data push is a Braze push message that contains only extra information that can
    * be used directly by the app.
    */
   public static boolean isNotificationMessage(Intent intent) {
@@ -188,7 +194,7 @@ public class AppboyNotificationUtils {
 
   /**
    * Creates and sends a broadcast message that can be listened for by the host app. The broadcast
-   * message intent contains all of the data sent as part of the Appboy push message. The broadcast
+   * message intent contains all of the data sent as part of the Braze push message. The broadcast
    * message action is <host-app-package-name>.intent.APPBOY_PUSH_RECEIVED.
    */
   public static void sendPushMessageReceivedBroadcast(Context context, Bundle notificationExtras) {
@@ -202,7 +208,7 @@ public class AppboyNotificationUtils {
   }
 
   /**
-   * Requests a geofence refresh from Appboy if appropriate based on the payload of the push notification.
+   * Requests a geofence refresh from Braze if appropriate based on the payload of the push notification.
    *
    * @param context
    * @param notificationExtras Notification extras as provided by GCM/ADM.
@@ -233,7 +239,7 @@ public class AppboyNotificationUtils {
     PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT);
     AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
     if (durationInMillis >= Constants.APPBOY_MINIMUM_NOTIFICATION_DURATION_MILLIS) {
-      AppboyLogger.d(TAG, String.format("Setting Notification duration alarm for %d ms", durationInMillis));
+      AppboyLogger.d(TAG, "Setting Notification duration alarm for " + durationInMillis + " ms");
       alarmManager.set(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + durationInMillis, pendingIntent);
     }
   }
@@ -241,7 +247,7 @@ public class AppboyNotificationUtils {
   /**
    * Returns an id for the new notification we'll send to the notification center.
    * Notification id is used by the Android OS to override currently active notifications with identical ids.
-   * If a custom notification id is not defined in the payload, Appboy derives an id value from the message's contents
+   * If a custom notification id is not defined in the payload, Braze derives an id value from the message's contents
    * to prevent duplication in the notification center.
    */
   public static int getNotificationId(Bundle notificationExtras) {
@@ -266,7 +272,7 @@ public class AppboyNotificationUtils {
         return notificationId;
       }
     } else {
-      AppboyLogger.d(TAG, String.format("Message without extras bundle received. Using default notification id: " + Constants.APPBOY_DEFAULT_NOTIFICATION_ID));
+      AppboyLogger.d(TAG, "Message without extras bundle received. Using default notification id: ");
       return Constants.APPBOY_DEFAULT_NOTIFICATION_ID;
     }
   }
@@ -274,6 +280,8 @@ public class AppboyNotificationUtils {
   /**
    * This method will retrieve notification priority from notificationExtras bundle if it has been set.
    * Otherwise returns the default priority.
+   *
+   * Starting with Android O, priority is set on a notification channel and not individually on notifications.
    */
   @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
   public static int getNotificationPriority(Bundle notificationExtras) {
@@ -283,7 +291,7 @@ public class AppboyNotificationUtils {
         if (isValidNotificationPriority(notificationPriority)) {
           return notificationPriority;
         } else {
-          AppboyLogger.e(TAG, String.format("Received invalid notification priority %d", notificationPriority));
+          AppboyLogger.e(TAG, "Received invalid notification priority " + notificationPriority);
         }
       } catch (NumberFormatException e) {
         AppboyLogger.e(TAG, "Unable to parse custom priority. Returning default priority of " + Notification.PRIORITY_DEFAULT, e);
@@ -294,6 +302,8 @@ public class AppboyNotificationUtils {
 
   /**
    * Checks whether the given integer value is a valid Android notification priority constant.
+   *
+   * Starting with Android O, priority is set on a notification channel and not individually on notifications.
    */
   @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
   public static boolean isValidNotificationPriority(int priority) {
@@ -301,7 +311,7 @@ public class AppboyNotificationUtils {
   }
 
   /**
-   * This method will wake the device using a wake lock if the WAKE_LOCK permission is present in the
+   * This method will wake the device using a wake lock if the {@link android.Manifest.permission#WAKE_LOCK} permission is present in the
    * manifest. If the permission is not present, this does nothing. If the screen is already on,
    * and the permission is present, this does nothing. If the priority of the incoming notification
    * is min, this does nothing.
@@ -311,8 +321,23 @@ public class AppboyNotificationUtils {
     if (!PermissionUtils.hasPermission(context, Manifest.permission.WAKE_LOCK)) {
       return false;
     }
-    // Don't wake lock if this is a minimum priority notification.
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+    // Don't wake lock if this is a minimum priority/importance notification.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      // Get the channel for this notification
+      NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+      NotificationChannel notificationChannel = getValidNotificationChannel(notificationManager, notificationExtras);
+
+      if (notificationChannel == null) {
+        AppboyLogger.d(TAG, "Not waking screen on Android O+ device, could not find notification channel.");
+        return false;
+      }
+
+      int importance = getNotificationChannelImportance(notificationChannel);
+      if (importance == NotificationManager.IMPORTANCE_MIN) {
+        AppboyLogger.d(TAG, "Not acquiring wake-lock for Android O+ notification with importance: " + importance);
+        return false;
+      }
+    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
       if (getNotificationPriority(notificationExtras) == Notification.PRIORITY_MIN) {
         return false;
       }
@@ -337,6 +362,31 @@ public class AppboyNotificationUtils {
       return AppboyNotificationFactory.getInstance();
     } else {
       return customAppboyNotificationFactory;
+    }
+  }
+
+  /**
+   * Checks that the notification is a story that has only just been received. If so, each
+   * image within the story is put in the Braze image loader's cache.
+   *
+   * @param context Application context.
+   * @param notificationExtras Notification extras as provided by GCM/ADM.
+   */
+  public static void prefetchBitmapsIfNewlyReceivedStoryPush(Context context, Bundle notificationExtras) {
+    if (!notificationExtras.containsKey(Constants.APPBOY_PUSH_STORY_KEY)) {
+      return;
+    }
+    if ((notificationExtras.getBoolean(Constants.APPBOY_PUSH_STORY_IS_NEWLY_RECEIVED, false))) {
+      int count = 0;
+      String imageUrl = AppboyNotificationActionUtils.getActionFieldAtIndex(count, notificationExtras, Constants.APPBOY_PUSH_STORY_IMAGE_KEY_TEMPLATE);
+      while (!StringUtils.isNullOrBlank(imageUrl)) {
+        AppboyLogger.v(TAG, "Pre-fetching bitmap at URL: " + imageUrl);
+        IAppboyImageLoader imageLoader = Appboy.getInstance(context).getAppboyImageLoader();
+        imageLoader.getBitmapFromUrl(context, imageUrl, AppboyViewBounds.NOTIFICATION_ONE_IMAGE_STORY);
+        count++;
+        imageUrl = AppboyNotificationActionUtils.getActionFieldAtIndex(count, notificationExtras, Constants.APPBOY_PUSH_STORY_IMAGE_KEY_TEMPLATE);
+      }
+      notificationExtras.putBoolean(Constants.APPBOY_PUSH_STORY_IS_NEWLY_RECEIVED, false);
     }
   }
 
@@ -411,6 +461,17 @@ public class AppboyNotificationUtils {
   }
 
   /**
+   * This method exists to disable {@link NotificationCompat.Builder#setShowWhen(boolean)} for push
+   * stories.
+   */
+  public static void setSetShowWhen(NotificationCompat.Builder notificationBuilder, Bundle notificationExtras) {
+    if (notificationExtras.containsKey(Constants.APPBOY_PUSH_STORY_KEY)) {
+      AppboyLogger.d(TAG, "Set show when not supported in story push.");
+      notificationBuilder.setShowWhen(false);
+    }
+  }
+
+  /**
    * Set large icon. We use the large icon URL if it exists in the notificationExtras.
    * Otherwise we search for a drawable defined in appboy.xml. If that doesn't exists, we do nothing.
    * <p/>
@@ -419,6 +480,10 @@ public class AppboyNotificationUtils {
    */
   public static boolean setLargeIconIfPresentAndSupported(Context context, AppboyConfigurationProvider appConfigurationProvider,
       NotificationCompat.Builder notificationBuilder, Bundle notificationExtras) {
+    if (notificationExtras.containsKey(Constants.APPBOY_PUSH_STORY_KEY)) {
+      AppboyLogger.d(TAG, "Large icon not supported in story push.");
+      return false;
+    }
     try {
       if (notificationExtras != null
           && notificationExtras.containsKey(Constants.APPBOY_PUSH_LARGE_ICON_KEY)) {
@@ -450,9 +515,8 @@ public class AppboyNotificationUtils {
   /**
    * Notifications can optionally include a sound to play when the notification is delivered.
    * <p/>
-   * @deprecated Starting with Android O, sound is set on a notification channel and not individually on notifications.
+   * Starting with Android O, sound is set on a notification channel and not individually on notifications.
    */
-  @Deprecated
   public static void setSoundIfPresentAndSupported(NotificationCompat.Builder notificationBuilder, Bundle notificationExtras) {
     if (notificationExtras != null && notificationExtras.containsKey(Constants.APPBOY_PUSH_NOTIFICATION_SOUND_KEY)) {
       // Retrieve sound uri if included in notificationExtras bundle.
@@ -495,10 +559,9 @@ public class AppboyNotificationUtils {
    * Sets the priority of the notification if a priority is present in the notification extras.
    * <p/>
    * Supported JellyBean+.
-   *
-   * @deprecated Starting with Android O, priority is set on a notification channel and not individually on notifications.
+   * <p/>
+   * Starting with Android O, priority is set on a notification channel and not individually on notifications.
    */
-  @Deprecated
   public static void setPriorityIfPresentAndSupported(NotificationCompat.Builder notificationBuilder, Bundle notificationExtras) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
       if (notificationExtras != null) {
@@ -520,7 +583,7 @@ public class AppboyNotificationUtils {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
       if (notificationExtras != null) {
         AppboyLogger.d(TAG, "Setting style for notification");
-        NotificationCompat.Style style = AppboyNotificationStyleFactory.getBigNotificationStyle(context, notificationExtras, appboyExtras);
+        NotificationCompat.Style style = AppboyNotificationStyleFactory.getBigNotificationStyle(context, notificationExtras, appboyExtras, notificationBuilder);
         notificationBuilder.setStyle(style);
       }
     }
@@ -588,7 +651,7 @@ public class AppboyNotificationUtils {
             AppboyLogger.d(TAG, "Setting visibility for notification");
             notificationBuilder.setVisibility(visibility);
           } else {
-            AppboyLogger.e(TAG, String.format("Received invalid notification visibility %d", visibility));
+            AppboyLogger.e(TAG, "Received invalid notification visibility " + visibility);
           }
         } catch (Exception e) {
           AppboyLogger.e(TAG, "Failed to parse visibility from notificationExtras", e);
@@ -630,10 +693,10 @@ public class AppboyNotificationUtils {
   }
 
   /**
-   * Logs a notification click with Appboy if the extras passed down
-   * indicate that they are from Appboy and contain a campaign Id.
+   * Logs a notification click with Braze if the extras passed down
+   * indicate that they are from Braze and contain a campaign Id.
    * <p/>
-   * An Appboy session must be active to log a push notification.
+   * A Braze session must be active to log a push notification.
    *
    * @param customContentString extra key value pairs in JSON format.
    */
@@ -650,18 +713,18 @@ public class AppboyNotificationUtils {
         Appboy.getInstance(context).logPushNotificationOpened(campaignId);
       }
     } catch (Exception e) {
-      AppboyLogger.e(TAG, String.format("Caught an exception processing customContentString: %s", customContentString), e);
+      AppboyLogger.e(TAG, "Caught an exception processing customContentString: " + customContentString, e);
     }
   }
 
   /**
-   * Handles a request to cancel a push notification in the notification center. Called by GCM/ADM receiver when an
-   * Appboy cancel notification intent is received.
+   * Handles a request to cancel a push notification in the notification center. Called by GCM/ADM
+   * receiver when a Braze cancel notification intent is received.
    * <p/>
    * Any existing notification in the notification center with the integer Id specified in the
    * "nid" field of the provided intent's extras is cancelled.
    * <p/>
-   * If no Id is found, the defaut Appboy notification Id is used.
+   * If no Id is found, the defaut Braze notification Id is used.
    *
    * @param context
    * @param intent the cancel notification intent
@@ -670,7 +733,7 @@ public class AppboyNotificationUtils {
     try {
       if (intent.hasExtra(Constants.APPBOY_PUSH_NOTIFICATION_ID)) {
         int notificationId = intent.getIntExtra(Constants.APPBOY_PUSH_NOTIFICATION_ID, Constants.APPBOY_DEFAULT_NOTIFICATION_ID);
-        AppboyLogger.d(TAG, String.format("Cancelling notification action with id: %d", notificationId));
+        AppboyLogger.d(TAG, "Cancelling notification action with id: " + notificationId);
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.cancel(Constants.APPBOY_PUSH_NOTIFICATION_TAG, notificationId);
       }
@@ -682,7 +745,7 @@ public class AppboyNotificationUtils {
   /**
    * Creates a request to cancel a push notification in the notification center.
    * <p/>
-   * Sends an intent to the GCM/ADM receiver requesting Appboy to cancel the notification with
+   * Sends an intent to the GCM/ADM receiver requesting Braze to cancel the notification with
    * the specified notification Id.
    * <p/>
    * See {@link #handleCancelNotificationAction}
@@ -692,7 +755,7 @@ public class AppboyNotificationUtils {
    */
   public static void cancelNotification(Context context, int notificationId) {
     try {
-      AppboyLogger.d(TAG, String.format("Cancelling notification action with id: %d", notificationId));
+      AppboyLogger.d(TAG, "Cancelling notification action with id: " + notificationId);
       Intent cancelNotificationIntent = new Intent(Constants.APPBOY_CANCEL_NOTIFICATION_ACTION).setClass(context, AppboyNotificationUtils.getNotificationReceiverClass());
       cancelNotificationIntent.putExtra(Constants.APPBOY_PUSH_NOTIFICATION_ID, notificationId);
       IntentUtils.addComponentAndSendBroadcast(context, cancelNotificationIntent);
@@ -713,15 +776,15 @@ public class AppboyNotificationUtils {
   }
 
   /**
-   * Returns true if the bundle is from a push sent by Appboy for uninstall tracking.
+   * Returns true if the bundle is from a push sent by Braze for uninstall tracking.
    * <p/>
    * Uninstall tracking push messages are content-only (i.e. non-display) push messages. You can use this
-   * method to detect that a push is from an Appboy uninstall tracking push and ensure your broadcast receiver
-   * doesn't take any actions it shouldn't if a content push is from Appboy uninstall tracking (e.g. don't ping your server
-   * for content on Appboy uninstall push).
+   * method to detect that a push is from a Braze uninstall tracking push and ensure your broadcast receiver
+   * doesn't take any actions it shouldn't if a content push is from Braze uninstall tracking (e.g. don't ping your server
+   * for content on Braze uninstall push).
    *
    * @param notificationExtras A notificationExtras bundle that is passed with the push recieved intent when a GCM/ADM message is
-   *                           received, and that Appboy passes in the intent to registered receivers.
+   *                           received, and that Braze passes in the intent to registered receivers.
    */
   public static boolean isUninstallTrackingPush(Bundle notificationExtras) {
     if (notificationExtras != null) {
@@ -746,35 +809,27 @@ public class AppboyNotificationUtils {
    *
    * The default notification channel uses the id {@link Constants#APPBOY_PUSH_DEFAULT_NOTIFICATION_CHANNEL_ID}.
    */
-  @TargetApi(Build.VERSION_CODES.O)
+  @SuppressLint({"InlinedApi", "NewApi"})
   public static void setNotificationChannelIfSupported(Context context, AppboyConfigurationProvider appConfigurationProvider,
                                                        NotificationCompat.Builder notificationBuilder, Bundle notificationExtras) {
-    NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+      NotificationChannel notificationChannel = getValidNotificationChannel(notificationManager, notificationExtras);
+      if (notificationChannel != null) {
+        AppboyLogger.d(TAG, "Using notification channel with id: " + notificationChannel.getId());
+        notificationBuilder.setChannelId(notificationChannel.getId());
+      } else if (notificationChannel == null || notificationChannel.getId().equals(Constants.APPBOY_PUSH_DEFAULT_NOTIFICATION_CHANNEL_ID)) {
+        // Create the default NotificationChannel or update the name/description if their values have changed.
+        notificationChannel = new NotificationChannel(Constants.APPBOY_PUSH_DEFAULT_NOTIFICATION_CHANNEL_ID,
+            appConfigurationProvider.getDefaultNotificationChannelName(), NotificationManager.IMPORTANCE_DEFAULT);
+        notificationChannel.setDescription(appConfigurationProvider.getDefaultNotificationChannelDescription());
+        notificationManager.createNotificationChannel(notificationChannel);
 
-    // Check if the notification channel id is present in the extras and if that notification channel exists.
-    String channelIdFromExtras = notificationExtras.getString(Constants.APPBOY_PUSH_NOTIFICATION_CHANNEL_ID_KEY, null);
-    if (!StringUtils.isNullOrBlank(channelIdFromExtras)) {
-      if (notificationManager.getNotificationChannel(channelIdFromExtras) != null) {
-        // Apply that channel to the notification
-        AppboyLogger.d(TAG, "Using extras provided notification channel with id: " + channelIdFromExtras);
-        notificationBuilder.setChannelId(channelIdFromExtras);
-        return;
-      } else {
-        AppboyLogger.i(TAG, "Notification channel from extras is invalid, no channel found with id: " + channelIdFromExtras);
+        // Use the default notification channel
+        notificationBuilder.setChannelId(Constants.APPBOY_PUSH_DEFAULT_NOTIFICATION_CHANNEL_ID);
+        AppboyLogger.d(TAG, "Using default notification channel with id: " + Constants.APPBOY_PUSH_DEFAULT_NOTIFICATION_CHANNEL_ID);
       }
-    } else {
-      AppboyLogger.i(TAG, "Device uses Android O or above, but notification did not contain a notification channel.");
     }
-
-    // Create the default NotificationChannel or update the name/description if their values have changed.
-    NotificationChannel notificationChannel = new NotificationChannel(Constants.APPBOY_PUSH_DEFAULT_NOTIFICATION_CHANNEL_ID,
-        appConfigurationProvider.getDefaultNotificationChannelName(), NotificationManager.IMPORTANCE_DEFAULT);
-    notificationChannel.setDescription(appConfigurationProvider.getDefaultNotificationChannelDescription());
-    notificationManager.createNotificationChannel(notificationChannel);
-
-    // Use the default notification channel
-    notificationBuilder.setChannelId(Constants.APPBOY_PUSH_DEFAULT_NOTIFICATION_CHANNEL_ID);
-    AppboyLogger.d(TAG, "Using default notification channel with id: " + Constants.APPBOY_PUSH_DEFAULT_NOTIFICATION_CHANNEL_ID);
   }
 
   /**
@@ -832,5 +887,79 @@ public class AppboyNotificationUtils {
    */
   private static void logNotificationOpened(Context context, Intent intent) {
     Appboy.getInstance(context).logPushNotificationOpened(intent);
+  }
+
+  /**
+   * Handles a push story page click. Called by GCM/ADM receiver when an
+   * Braze push story click intent is received.
+   *
+   * @param context Application context.
+   * @param intent The push story click intent.
+   */
+  public static void handlePushStoryPageClicked(Context context, Intent intent) {
+    try {
+      Appboy.getInstance(context).logPushStoryPageClicked(intent.getStringExtra(Constants.APPBOY_CAMPAIGN_ID), intent.getStringExtra(Constants.APPBOY_STORY_PAGE_ID));
+      String deepLink = intent.getStringExtra(Constants.APPBOY_ACTION_URI_KEY);
+      if (!StringUtils.isNullOrBlank(deepLink)) {
+        // Set the global deep link value to the correct action's deep link.
+        intent.putExtra(Constants.APPBOY_PUSH_DEEP_LINK_KEY, intent.getStringExtra(Constants.APPBOY_ACTION_URI_KEY));
+        String useWebviewString = intent.getStringExtra(Constants.APPBOY_ACTION_USE_WEBVIEW_KEY);
+        if (!StringUtils.isNullOrBlank(useWebviewString)) {
+          intent.putExtra(Constants.APPBOY_PUSH_OPEN_URI_IN_WEBVIEW_KEY, useWebviewString);
+        }
+      } else {
+        // Otherwise, remove any existing deep links.
+        intent.removeExtra(Constants.APPBOY_PUSH_DEEP_LINK_KEY);
+      }
+      context.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+      AppboyNotificationUtils.sendNotificationOpenedBroadcast(context, intent);
+
+      AppboyConfigurationProvider appConfigurationProvider = new AppboyConfigurationProvider(context);
+      if (appConfigurationProvider.getHandlePushDeepLinksAutomatically()) {
+        AppboyNotificationUtils.routeUserWithNotificationOpenedIntent(context, intent);
+      }
+    } catch (Exception e) {
+      AppboyLogger.e(TAG, "Caught exception while handling story click.", e);
+    }
+  }
+
+  /**
+   * Returns an existing notification channel. The notification extras are first checked for a notification channel that exists. If not, then the default
+   * Braze notification channel is returned if it exists. If neither exist on the device, then null is returned.
+   *
+   * This method does not create a notification channel if a valid channel cannot be found.
+   *
+   * @param notificationExtras The extras that will be checked for a valid notification channel id.
+   * @return A already created notification channel on the device, or null if one cannot be found.
+   */
+  @TargetApi(Build.VERSION_CODES.O)
+  static NotificationChannel getValidNotificationChannel(NotificationManager notificationManager, Bundle notificationExtras) {
+    if (notificationExtras == null) {
+      AppboyLogger.d(TAG, "Notification extras bundle was null. Could not find a valid notification channel");
+      return null;
+    }
+    String channelIdFromExtras = notificationExtras.getString(Constants.APPBOY_PUSH_NOTIFICATION_CHANNEL_ID_KEY, null);
+    if (!StringUtils.isNullOrBlank(channelIdFromExtras)) {
+      final NotificationChannel notificationChannel = notificationManager.getNotificationChannel(channelIdFromExtras);
+      if (notificationChannel != null) {
+        AppboyLogger.d(TAG, "Found notification channel in extras with id: " + channelIdFromExtras);
+        return notificationChannel;
+      } else {
+        AppboyLogger.d(TAG, "Notification channel from extras is invalid, no channel found with id: " + channelIdFromExtras);
+      }
+    }
+
+    final NotificationChannel defaultNotificationChannel = notificationManager.getNotificationChannel(Constants.APPBOY_PUSH_DEFAULT_NOTIFICATION_CHANNEL_ID);
+    if (defaultNotificationChannel != null) {
+      return defaultNotificationChannel;
+    } else {
+      AppboyLogger.d(TAG, "Appboy default notification channel does not exist on device.");
+    }
+    return null;
+  }
+
+  @TargetApi(Build.VERSION_CODES.O)
+  private static int getNotificationChannelImportance(NotificationChannel notificationChannel) {
+    return notificationChannel.getImportance();
   }
 }

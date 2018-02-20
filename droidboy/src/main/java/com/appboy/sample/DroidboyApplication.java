@@ -1,14 +1,18 @@
 package com.appboy.sample;
 
+import android.annotation.SuppressLint;
 import android.app.Application;
+import android.app.NotificationChannel;
+import android.app.NotificationChannelGroup;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.StrictMode;
 import android.util.Log;
 import com.appboy.Appboy;
 import com.appboy.AppboyLifecycleCallbackListener;
-import com.appboy.Constants;
 import com.appboy.configuration.AppboyConfig;
 import com.appboy.sample.util.EmulatorDetectionUtils;
 import com.appboy.support.AppboyLogger;
@@ -18,9 +22,10 @@ import com.facebook.drawee.backends.pipeline.Fresco;
 import java.util.Arrays;
 
 public class DroidboyApplication extends Application {
-  private static final String TAG = String.format("%s.%s", Constants.APPBOY_LOG_TAG_PREFIX, DroidboyApplication.class.getName());
+  private static final String TAG = AppboyLogger.getAppboyLogTag(DroidboyApplication.class);
   protected static final String OVERRIDE_API_KEY_PREF_KEY = "override_api_key";
   protected static final String OVERRIDE_ENDPOINT_PREF_KEY = "override_endpoint_url";
+  protected static final String OVERRIDE_FRESCO_PREF_KEY = "override_fresco_enabled_key";
   private static String sOverrideApiKeyInUse;
 
   @Override
@@ -42,6 +47,10 @@ public class DroidboyApplication extends Application {
     Appboy.configure(this, null);
     AppboyConfig.Builder appboyConfigBuilder = new AppboyConfig.Builder();
     setOverrideApiKeyIfConfigured(sharedPreferences, appboyConfigBuilder);
+    if (sharedPreferences.contains(OVERRIDE_FRESCO_PREF_KEY)) {
+      boolean frescoOverride = sharedPreferences.getBoolean(OVERRIDE_FRESCO_PREF_KEY, false);
+      appboyConfigBuilder.setFrescoLibraryEnabled(frescoOverride);
+    }
     Appboy.configure(this, appboyConfigBuilder.build());
 
     String overrideEndpointUrl = sharedPreferences.getString(OVERRIDE_ENDPOINT_PREF_KEY, null);
@@ -52,34 +61,94 @@ public class DroidboyApplication extends Application {
     }
 
     registerActivityLifecycleCallbacks(new AppboyLifecycleCallbackListener());
+
+    NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+    createNotificationGroup(notificationManager, R.string.droidboy_notification_group_01_id, R.string.droidboy_notification_group_01_name);
+    createNotificationChannel(notificationManager, R.string.droidboy_notification_channel_01_id, R.string.droidboy_notification_channel_messages_name,
+        R.string.droidboy_notification_channel_messages_desc, R.string.droidboy_notification_group_01_id);
+    createNotificationChannel(notificationManager, R.string.droidboy_notification_channel_02_id, R.string.droidboy_notification_channel_matches_name,
+        R.string.droidboy_notification_channel_matches_desc, R.string.droidboy_notification_group_01_id);
+    createNotificationChannel(notificationManager, R.string.droidboy_notification_channel_03_id, R.string.droidboy_notification_channel_offers_name,
+        R.string.droidboy_notification_channel_offers_desc, R.string.droidboy_notification_group_01_id);
+    createNotificationChannel(notificationManager, R.string.droidboy_notification_channel_04_id, R.string.droidboy_notification_channel_recommendations_name,
+        R.string.droidboy_notification_channel_recommendations_desc, R.string.droidboy_notification_group_01_id);
   }
 
+  @SuppressLint("NewApi")
+  private void createNotificationGroup(NotificationManager notificationManager, int idResource, int nameResource) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      notificationManager.createNotificationChannelGroup(new NotificationChannelGroup(
+          getString(idResource),
+          getString(nameResource)
+      ));
+    }
+  }
+
+  @SuppressLint("NewApi")
+  private void createNotificationChannel(NotificationManager notificationManager, int idResource, int nameResource, int descResource, int groupResource) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      NotificationChannel channel = new NotificationChannel(
+          getString(idResource),
+          getString(nameResource),
+          NotificationManager.IMPORTANCE_LOW);
+      channel.setDescription(getString(descResource));
+      channel.enableLights(true);
+      channel.setLightColor(Color.RED);
+      channel.setGroup(getString(groupResource));
+      channel.enableVibration(true);
+      channel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
+      notificationManager.createNotificationChannel(channel);
+    }
+  }
+
+  @SuppressLint("NewApi")
   private void activateStrictMode() {
     StrictMode.ThreadPolicy.Builder threadPolicyBuilder = new StrictMode.ThreadPolicy.Builder()
         .detectAll()
         .penaltyLog();
+
+    // We are explicitly not detecting detectLeakedClosableObjects(), detectLeakedSqlLiteObjects(), and detectUntaggedSockets()
+    // The okhttp library used on most https calls trips the detectUntaggedSockets() check
+    // com.google.android.gms.internal trips both the detectLeakedClosableObjects() and detectLeakedSqlLiteObjects() checks
     StrictMode.VmPolicy.Builder vmPolicyBuilder = new StrictMode.VmPolicy.Builder()
-        .detectAll()
-        .detectLeakedClosableObjects()
+        .detectActivityLeaks()
         .penaltyLog();
+
+    // Note that some detections require a specific sdk version or higher to enable.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+      vmPolicyBuilder.detectLeakedRegistrationObjects();
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+      vmPolicyBuilder.detectFileUriExposure();
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      vmPolicyBuilder.detectCleartextNetwork();
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      vmPolicyBuilder.detectContentUriWithoutPermission();
+    }
     StrictMode.setThreadPolicy(threadPolicyBuilder.build());
     StrictMode.setVmPolicy(vmPolicyBuilder.build());
+
+    StrictMode.allowThreadDiskReads();
+    StrictMode.allowThreadDiskWrites();
   }
 
-  // Disable Appboy network requests if the preference has been set and the current device model matches a list of emulators
+  // Disable Braze network requests if the preference has been set and the current device model matches a list of emulators
   // we don't want to run Appboy on in certain scenarios.
   private void disableNetworkRequestsIfConfigured(SharedPreferences sharedPreferences) {
     boolean disableAppboyNetworkRequestsBooleanString = sharedPreferences.getBoolean(getString(R.string.mock_appboy_network_requests), false);
     if (disableAppboyNetworkRequestsBooleanString && Arrays.asList(EmulatorDetectionUtils.getEmulatorModelsForAppboyDeactivation()).contains(Build.MODEL)) {
       Appboy.enableMockAppboyNetworkRequestsAndDropEventsMode();
-      Log.i(TAG, String.format("Mocking Appboy network requests because preference was set and model was %s", Build.MODEL));
+      Log.i(TAG, String.format("Mocking Braze network requests because preference was set and model was %s", Build.MODEL));
     }
   }
 
   private void setOverrideApiKeyIfConfigured(SharedPreferences sharedPreferences, AppboyConfig.Builder appboyConfigBuilder) {
     String overrideApiKey = sharedPreferences.getString(OVERRIDE_API_KEY_PREF_KEY, null);
     if (!StringUtils.isNullOrBlank(overrideApiKey)) {
-      Log.i(TAG, String.format("Override API key found, configuring Appboy with override key %s.", overrideApiKey));
+      Log.i(TAG, String.format("Override API key found, configuring Braze with override key %s.", overrideApiKey));
       appboyConfigBuilder.setApiKey(overrideApiKey);
       sOverrideApiKeyInUse = overrideApiKey;
     }

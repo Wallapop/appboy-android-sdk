@@ -5,7 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import com.appboy.Constants;
+
 import com.appboy.models.cards.BannerImageCard;
 import com.appboy.models.cards.CaptionedImageCard;
 import com.appboy.models.cards.Card;
@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.zip.Inflater;
 
 /**
- * Default adapter used to display cards and log card impressions for the Appboy feed.
+ * Default adapter used to display cards and log card impressions for the Braze news feed.
  * <p/>
  * This allows the stream to reuse cards when they go out of view.
  * <p/>
@@ -46,7 +46,7 @@ import java.util.zip.Inflater;
  * {@link com.appboy.ui.adapters.AppboyListAdapter#replaceFeed(java.util.List)}
  */
 public class AppboyListAdapter extends ArrayAdapter<Card> {
-  private static final String TAG = String.format("%s.%s", Constants.APPBOY_LOG_TAG_PREFIX, AppboyListAdapter.class.getName());
+  private static final String TAG = AppboyLogger.getAppboyLogTag(AppboyListAdapter.class);
 
   private final Context mContext;
   private final Set<String> mCardIdImpressions;
@@ -114,8 +114,7 @@ public class AppboyListAdapter extends ArrayAdapter<Card> {
       view = (BaseCardView) convertView;
     }
 
-    AppboyLogger.v(TAG, String.format("Using view of type: %s for card at position %d: %s", view.getClass().getName(),
-        position, card.toString()));
+    AppboyLogger.v(TAG, "Using view of type: " + view.getClass().getName() + " for card at position " + position + ": " + card.toString());
     view.setCard(card);
     logCardImpression(card);
     return view;
@@ -131,8 +130,7 @@ public class AppboyListAdapter extends ArrayAdapter<Card> {
       return;
     }
 
-    AppboyLogger.d(TAG, String.format("Replacing existing feed of %d cards with new feed containing %d cards.",
-        getCount(), cards.size()));
+    AppboyLogger.d(TAG, "Replacing existing feed of " + getCount() + " cards with new feed containing " + cards.size() + " cards.");
     int i = 0;
     int j = 0;
     int newFeedSize = cards.size();
@@ -182,9 +180,9 @@ public class AppboyListAdapter extends ArrayAdapter<Card> {
     if (!mCardIdImpressions.contains(cardId)) {
       mCardIdImpressions.add(cardId);
       card.logImpression();
-      AppboyLogger.v(TAG, String.format("Logged impression for card %s", cardId));
+      AppboyLogger.v(TAG, "Logged impression for card " + cardId);
     } else {
-      AppboyLogger.v(TAG, String.format("Already counted impression for card %s", cardId));
+      AppboyLogger.v(TAG, "Already counted impression for card " + cardId);
     }
     if (!card.getViewed()) {
       card.setViewed(true);

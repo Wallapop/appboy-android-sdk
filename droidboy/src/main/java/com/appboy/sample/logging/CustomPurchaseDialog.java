@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.EditText;
+
 import com.appboy.Appboy;
 import com.appboy.models.outgoing.AppboyProperties;
 import com.appboy.sample.R;
@@ -38,7 +39,7 @@ public class CustomPurchaseDialog extends CustomLogger {
   }
 
   @Override
-  protected boolean customLog(String name, AppboyProperties properties) {
+  protected void customLog(String name, AppboyProperties properties) {
     String currencyCode = mCustomPurchaseCurrencyCodeName.getText().toString();
     String quantity = mCustomPurchaseQuantity.getText().toString();
     String price = mCustomPurchasePrice.getText().toString();
@@ -50,8 +51,9 @@ public class CustomPurchaseDialog extends CustomLogger {
       price = DEFAULT_PRICE;
     }
     if (StringUtils.isNullOrBlank(quantity)) {
-      return Appboy.getInstance(getContext()).logPurchase(name, currencyCode, new BigDecimal(price), properties);
+      Appboy.getInstance(getContext()).logPurchase(name, currencyCode, new BigDecimal(price), properties);
+      return;
     }
-    return Appboy.getInstance(getContext()).logPurchase(name, currencyCode, new BigDecimal(price), Integer.parseInt(quantity), properties);
+    Appboy.getInstance(getContext()).logPurchase(name, currencyCode, new BigDecimal(price), Integer.parseInt(quantity), properties);
   }
 }

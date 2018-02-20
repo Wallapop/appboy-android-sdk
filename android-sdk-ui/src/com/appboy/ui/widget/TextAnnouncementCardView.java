@@ -8,17 +8,17 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.widget.TextView;
 
-import com.appboy.Constants;
 import com.appboy.models.cards.TextAnnouncementCard;
+import com.appboy.support.AppboyLogger;
 import com.appboy.ui.R;
 import com.appboy.ui.actions.IAction;
 
 public class TextAnnouncementCardView extends BaseCardView<TextAnnouncementCard> {
-    private TextView mTitle;
-    private TextView mDescription;
-    private TextView mDomain;
-    private IAction mCardAction;
-    private static final String TAG = String.format("%s.%s", Constants.APPBOY, TextAnnouncementCardView.class.getName());
+  private static final String TAG = AppboyLogger.getAppboyLogTag(TextAnnouncementCardView.class);private  TextView mTitle;
+  private  TextView mDescription;
+  private  TextView mDomain;
+  private IAction mCardAction;
+
 
 
     public TextAnnouncementCardView(final Context context, final AttributeSet attrs) {

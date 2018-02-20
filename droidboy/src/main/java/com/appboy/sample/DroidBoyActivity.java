@@ -28,6 +28,7 @@ import com.appboy.Appboy;
 import com.appboy.Constants;
 import com.appboy.enums.CardCategory;
 import com.appboy.sample.util.RuntimePermissionUtils;
+import com.appboy.support.AppboyLogger;
 import com.appboy.support.PermissionUtils;
 import com.appboy.ui.AppboyFeedFragment;
 import com.appboy.ui.AppboyFeedbackFragment;
@@ -36,7 +37,7 @@ import java.util.EnumSet;
 import java.util.List;
 
 public class DroidBoyActivity extends AppboyFragmentActivity implements FeedCategoriesFragment.NoticeDialogListener {
-  private static final String TAG = String.format("%s.%s", Constants.APPBOY_LOG_TAG_PREFIX, DroidBoyActivity.class.getName());
+  private static final String TAG = AppboyLogger.getAppboyLogTag(DroidBoyActivity.class);
   private EnumSet<CardCategory> mAppboyFeedCategories;
   protected Context mApplicationContext;
   protected DrawerLayout mDrawerLayout;
@@ -57,7 +58,6 @@ public class DroidBoyActivity extends AppboyFragmentActivity implements FeedCate
     Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
     setSupportActionBar(toolbar);
     getSupportActionBar().setTitle(null);
-    toolbar.setLogo(R.drawable.ic_appboy_logo_white);
 
     final ViewPager viewPager = (ViewPager) findViewById(R.id.viewpager);
     if (viewPager != null) {
@@ -102,7 +102,7 @@ public class DroidBoyActivity extends AppboyFragmentActivity implements FeedCate
     };
     sharedPref.registerOnSharedPreferenceChangeListener(mNewsfeedSortListener);
 
-    Log.i(TAG, "Appboy device id is " + Appboy.getInstance(getApplicationContext()).getDeviceId());
+    Log.i(TAG, "Braze device id is " + Appboy.getInstance(getApplicationContext()).getDeviceId());
   }
 
   private void setupViewPager(final ViewPager viewPager) {
@@ -158,6 +158,10 @@ public class DroidBoyActivity extends AppboyFragmentActivity implements FeedCate
       case R.id.geofences_map:
         mDrawerLayout.closeDrawers();
         startActivity(new Intent(mApplicationContext, GeofencesMapActivity.class));
+        break;
+      case R.id.settings:
+        mDrawerLayout.closeDrawers();
+        startActivity(new Intent(mApplicationContext, PreferencesActivity.class));
         break;
       default:
         Log.e(TAG, String.format("The %s menu item was not found. Ignoring.", item.getTitle()));
@@ -291,10 +295,10 @@ public class DroidBoyActivity extends AppboyFragmentActivity implements FeedCate
 
   public static String convertBundleToAppboyLogString(Bundle bundle) {
     if (bundle == null) {
-      return "Received intent with null extras Bundle from Appboy.";
+      return "Received intent with null extras Bundle from Braze.";
     }
     String bundleString = "Received intent with extras Bundle of size " + bundle.size()
-        + " from Appboy containing [";
+        + " from Braze containing [";
     for (String key : bundle.keySet()) {
       bundleString += " '" + key + "':'" + bundle.get(key) + "'";
     }

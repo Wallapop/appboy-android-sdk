@@ -2,6 +2,7 @@ package com.appboy.sample.logging;
 
 import android.content.Context;
 import android.util.AttributeSet;
+
 import com.appboy.Appboy;
 import com.appboy.models.outgoing.AppboyProperties;
 import com.appboy.sample.R;
@@ -13,7 +14,7 @@ public class CustomEventDialog extends CustomLogger {
   }
 
   @Override
-  protected boolean customLog(String name, AppboyProperties properties) {
-    return Appboy.getInstance(getContext()).logCustomEvent(name, properties);
+  protected void customLog(String name, AppboyProperties properties) {
+    Appboy.getInstance(getContext()).logCustomEvent(name, properties);
   }
 }

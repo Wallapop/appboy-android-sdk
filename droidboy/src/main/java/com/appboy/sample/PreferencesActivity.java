@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
@@ -19,17 +20,22 @@ import com.appboy.Constants;
 import com.appboy.models.outgoing.AttributionData;
 import com.appboy.sample.util.LifecycleUtils;
 import com.appboy.sample.util.RuntimePermissionUtils;
+import com.appboy.support.AppboyLogger;
 import com.appboy.support.StringUtils;
 import com.appboy.ui.feed.AppboyFeedManager;
-import io.branch.referral.Branch;
-import io.branch.referral.BranchError;
+
+import org.json.JSONObject;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONObject;
 
+import io.branch.referral.Branch;
+import io.branch.referral.BranchError;
+
 public class PreferencesActivity extends PreferenceActivity {
-  private static final String TAG = String.format("%s.%s", Constants.APPBOY_LOG_TAG_PREFIX, PreferencesActivity.class.getName());
+  private static final String TAG = AppboyLogger.getAppboyLogTag(PreferencesActivity.class);
   private static final Map<String, String> API_KEY_TO_APP_MAP;
 
   static {
@@ -59,7 +65,6 @@ public class PreferencesActivity extends PreferenceActivity {
     });
 
     Preference dataFlushPreference = findPreference("data_flush");
-    Preference requestInAppMessagePreference = findPreference("request_inappmessage");
     Preference setManualLocationPreference = findPreference("set_manual_location");
     Preference locationRuntimePermissionDialogPreference = findPreference("location_runtime_permission_dialog");
     Preference openSessionPreference = findPreference("open_session");
@@ -87,6 +92,8 @@ public class PreferencesActivity extends PreferenceActivity {
     SharedPreferences sharedPrefSort = getSharedPreferences(getString(R.string.feed), Context.MODE_PRIVATE);
     sortNewsFeed.setChecked(sharedPrefSort.getBoolean(getString(R.string.sort_feed), false));
     CheckBoxPreference setCustomNewsFeedClickActionListener = (CheckBoxPreference) findPreference("set_custom_news_feed_card_click_action_listener");
+    Preference enableFrescoPreference = findPreference("enable_fresco_preference_key");
+    Preference disableFrescoPreference = findPreference("disable_fresco_preference_key");
 
     sdkPreference.setSummary(Constants.APPBOY_SDK_VERSION);
     apiKeyPreference.setSummary(DroidboyApplication.getApiKeyInUse(getApplicationContext()));
@@ -151,40 +158,26 @@ public class PreferencesActivity extends PreferenceActivity {
         return true;
       }
     });
-    requestInAppMessagePreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-      @Override
-      public boolean onPreferenceClick(Preference preference) {
-        Appboy.getInstance(PreferencesActivity.this).requestInAppMessageRefresh();
-        showToast(getString(R.string.requested_inappmessage_toast));
-        return true;
-      }
-    });
     openSessionPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
       @Override
       public boolean onPreferenceClick(Preference preference) {
-        if (Appboy.getInstance(PreferencesActivity.this).openSession(PreferencesActivity.this)) {
-          showToast(getString(R.string.open_session_toast));
-        } else {
-          showToast(getString(R.string.resume_session_toast));
-        }
+        Appboy.getInstance(PreferencesActivity.this).openSession(PreferencesActivity.this);
         return true;
       }
     });
     closeSessionPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
       @Override
       public boolean onPreferenceClick(Preference preference) {
-        if (Appboy.getInstance(PreferencesActivity.this).closeSession(PreferencesActivity.this)) {
-          showToast(getString(R.string.close_session_toast));
-        } else {
-          showToast(getString(R.string.no_session_toast));
-        }
+        Appboy.getInstance(PreferencesActivity.this).closeSession(PreferencesActivity.this);
+        showToast(getString(R.string.close_session_toast));
         return true;
       }
     });
     anonymousUserRevertPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
       @Override
-      @SuppressLint("CommitPrefEdits")
+      @SuppressLint("ApplySharedPref")
       public boolean onPreferenceClick(Preference preference) {
+        // Note that .commit() is used here since we're restarting the process and thus need to immediately flush all shared prefs changes to disk
         SharedPreferences userSharedPreferences = getSharedPreferences("com.appboy.offline.storagemap", Context.MODE_PRIVATE);
         userSharedPreferences
             .edit()
@@ -221,9 +214,9 @@ public class PreferencesActivity extends PreferenceActivity {
         sharedPreferencesEditor.putBoolean(getString(R.string.mock_appboy_network_requests), newDisableAppboyNetworkRequestsPreference);
         sharedPreferencesEditor.apply();
         if (newDisableAppboyNetworkRequestsPreference) {
-          Toast.makeText(PreferencesActivity.this, "Disabling Appboy network requests for selected emulators in the next app run", Toast.LENGTH_LONG).show();
+          Toast.makeText(PreferencesActivity.this, "Disabling Braze network requests for selected emulators in the next app run", Toast.LENGTH_LONG).show();
         } else {
-          Toast.makeText(PreferencesActivity.this, "Enabling Appboy network requests for the next app run for all devices", Toast.LENGTH_LONG).show();
+          Toast.makeText(PreferencesActivity.this, "Enabling Braze network requests for the next app run for all devices", Toast.LENGTH_LONG).show();
         }
         return true;
       }
@@ -255,6 +248,32 @@ public class PreferencesActivity extends PreferenceActivity {
       @Override
       public boolean onPreferenceChange(Preference preference, Object newValue) {
         AppboyFeedManager.getInstance().setFeedCardClickActionListener((boolean) newValue ? new CustomFeedClickActionListener() : null);
+        return true;
+      }
+    });
+    enableFrescoPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+      @SuppressLint("ApplySharedPref")
+      @Override
+      public boolean onPreferenceClick(Preference preference) {
+        // Note that .commit() is used here since we're restarting the process and thus need to immediately flush all shared prefs changes to disk
+        SharedPreferences.Editor sharedPreferencesEditor = getApplicationContext().getSharedPreferences(getString(R.string.shared_prefs_location), Context.MODE_PRIVATE).edit();
+        sharedPreferencesEditor.putBoolean(DroidboyApplication.OVERRIDE_FRESCO_PREF_KEY, true);
+        sharedPreferencesEditor.commit();
+        Toast.makeText(PreferencesActivity.this, "Enabling the Fresco library for the next app run.", Toast.LENGTH_LONG).show();
+        LifecycleUtils.restartApp(getApplicationContext());
+        return true;
+      }
+    });
+    disableFrescoPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+      @SuppressLint("ApplySharedPref")
+      @Override
+      public boolean onPreferenceClick(Preference preference) {
+        // Note that .commit() is used here since we're restarting the process and thus need to immediately flush all shared prefs changes to disk
+        SharedPreferences.Editor sharedPreferencesEditor = getApplicationContext().getSharedPreferences(getString(R.string.shared_prefs_location), Context.MODE_PRIVATE).edit();
+        sharedPreferencesEditor.putBoolean(DroidboyApplication.OVERRIDE_FRESCO_PREF_KEY, false);
+        sharedPreferencesEditor.commit();
+        Toast.makeText(PreferencesActivity.this, "Disabling the Fresco library for the next app run.", Toast.LENGTH_LONG).show();
+        LifecycleUtils.restartApp(getApplicationContext());
         return true;
       }
     });
@@ -330,7 +349,7 @@ public class PreferencesActivity extends PreferenceActivity {
   }
 
   @Override
-  public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
     RuntimePermissionUtils.handleOnRequestPermissionsResult(PreferencesActivity.this, requestCode, grantResults);
   }
 }

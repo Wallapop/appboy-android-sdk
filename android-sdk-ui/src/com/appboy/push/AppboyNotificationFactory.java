@@ -29,7 +29,7 @@ public class AppboyNotificationFactory implements IAppboyNotificationFactory {
 
   /**
    * Returns a notification builder populated with all fields from the notification extras and
-   * Appboy extras.
+   * Braze extras.
    *
    * To create a notification object, call `build()` on the returned builder instance.
    */
@@ -40,12 +40,17 @@ public class AppboyNotificationFactory implements IAppboyNotificationFactory {
     // the addition of new RemoteViews options could mean that some methods conflict/overwrite. For clarity
     // we build the notification up in the order that each feature was supported.
 
+    // If this notification is a push story,
+    // make a best effort to preload bitmap images into the cache.
+    AppboyNotificationUtils.prefetchBitmapsIfNewlyReceivedStoryPush(context, notificationExtras);
+
     NotificationCompat.Builder notificationBuilder =
         new NotificationCompat.Builder(context).setAutoCancel(true);
 
     AppboyNotificationUtils.setTitleIfPresent(notificationBuilder, notificationExtras);
     AppboyNotificationUtils.setContentIfPresent(notificationBuilder, notificationExtras);
     AppboyNotificationUtils.setTickerIfPresent(notificationBuilder, notificationExtras);
+    AppboyNotificationUtils.setSetShowWhen(notificationBuilder, notificationExtras);
 
     // Add intent to fire when the notification is opened.
     AppboyNotificationUtils.setContentIntentIfPresent(context, notificationBuilder, notificationExtras);
@@ -77,10 +82,8 @@ public class AppboyNotificationFactory implements IAppboyNotificationFactory {
     AppboyNotificationUtils.setVisibilityIfPresentAndSupported(notificationBuilder, notificationExtras);
     AppboyNotificationUtils.setPublicVersionIfPresentAndSupported(context, appConfigurationProvider, notificationBuilder, notificationExtras);
 
-    // Android NotificationChannels were added in Android O. Note, once the official support comes out, this method may change.
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      AppboyNotificationUtils.setNotificationChannelIfSupported(context, appConfigurationProvider, notificationBuilder, notificationExtras);
-    }
+    // Notification priority and sound were deprecated in Android O
+    AppboyNotificationUtils.setNotificationChannelIfSupported(context, appConfigurationProvider, notificationBuilder, notificationExtras);
     AppboyNotificationUtils.setNotificationBadgeNumberIfPresent(notificationBuilder, notificationExtras);
 
     return notificationBuilder;

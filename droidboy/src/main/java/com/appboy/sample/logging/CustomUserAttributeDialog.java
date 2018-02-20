@@ -8,6 +8,7 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.RadioGroup;
 import android.widget.Toast;
+
 import com.appboy.Appboy;
 import com.appboy.AppboyUser;
 import com.appboy.sample.R;
@@ -143,7 +144,7 @@ public class CustomUserAttributeDialog extends DialogPreference {
     }
 
     // Flushing manually is not recommended in almost all production situations as
-    // Appboy automatically flushes data to its servers periodically. This call
+    // Braze automatically flushes data to its servers periodically. This call
     // is solely for testing purposes.
     if (mRequestFlush.isChecked()) {
       Appboy.getInstance(getContext()).requestImmediateDataFlush();

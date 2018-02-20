@@ -5,7 +5,6 @@ import android.graphics.drawable.Animatable;
 import android.net.Uri;
 
 import com.appboy.Appboy;
-import com.appboy.Constants;
 import com.appboy.configuration.AppboyConfigurationProvider;
 import com.appboy.support.AppboyLogger;
 import com.appboy.support.StringUtils;
@@ -24,7 +23,7 @@ import com.facebook.imagepipeline.request.ImageRequestBuilder;
  * the Fresco library used in the UI project.
  */
 public class FrescoLibraryUtils {
-  private static final String TAG = String.format("%s.%s", Constants.APPBOY_LOG_TAG_PREFIX, FrescoLibraryUtils.class.getName());
+  private static final String TAG = AppboyLogger.getAppboyLogTag(FrescoLibraryUtils.class);
   private static boolean sCanUseFresco = false;
   private static boolean sCanUseFrescoSet = false;
   private static final String FILE_SCHEME = "file";
@@ -55,7 +54,7 @@ public class FrescoLibraryUtils {
    * for the provided xml setting.
    *
    * @return true if the fresco library is on the path AND if use of the fresco library is allowed
-   * in the Appboy configuration settings.
+   * in the Braze configuration settings.
    */
   public static boolean canUseFresco(Context context) {
     if (sCanUseFrescoSet) {
@@ -121,7 +120,7 @@ public class FrescoLibraryUtils {
       return;
     }
 
-    // Selectively cancel network loading based on the Appboy network state
+    // Selectively cancel network loading based on the Braze network state
     ImageRequest.RequestLevel requestLevel = Appboy.getOutboundNetworkRequestsOffline()
         ? ImageRequest.RequestLevel.DISK_CACHE : ImageRequest.RequestLevel.FULL_FETCH;
     AppboyLogger.d(TAG, "Setting Fresco image request level to: " + requestLevel);

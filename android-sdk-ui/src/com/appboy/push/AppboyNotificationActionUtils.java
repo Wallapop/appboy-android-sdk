@@ -16,7 +16,7 @@ import com.appboy.support.IntentUtils;
 import com.appboy.support.StringUtils;
 
 public class AppboyNotificationActionUtils {
-  private static final String TAG = String.format("%s.%s", Constants.APPBOY_LOG_TAG_PREFIX, AppboyNotificationActionUtils.class.getName());
+  private static final String TAG = AppboyLogger.getAppboyLogTag(AppboyNotificationActionUtils.class);
 
   /**
    * Add notification actions to the provided notification builder.
@@ -61,7 +61,7 @@ public class AppboyNotificationActionUtils {
 
   /**
    * Handles clicks on notification action buttons in the notification center. Called by GCM/ADM
-   * receiver when an Appboy notification action button is clicked. The GCM/ADM receiver passes on
+   * receiver when an Braze notification action button is clicked. The GCM/ADM receiver passes on
    * the intent from the notification action button click intent.
    *
    * @param context
@@ -162,11 +162,25 @@ public class AppboyNotificationActionUtils {
    * @param actionFieldKeyTemplate the template of the action field
    * @return the desired notification action field value or the empty string if not present
    */
-  static String getActionFieldAtIndex(int actionIndex, Bundle notificationExtras, String actionFieldKeyTemplate) {
+  public static String getActionFieldAtIndex(int actionIndex, Bundle notificationExtras, String actionFieldKeyTemplate) {
+    return getActionFieldAtIndex(actionIndex, notificationExtras, actionFieldKeyTemplate, "");
+  }
+
+  /**
+   * Returns the value for the given action field key template at the specified index.
+   *
+   * @param actionIndex the index of the desired action
+   * @param notificationExtras GCM/ADM notification extras
+   * @param actionFieldKeyTemplate the template of the action field
+   * @param defaultValue the default value to return if the value for the key in notificationExtras
+   *                     is null.
+   * @return the desired notification action field value or the empty string if not present
+   */
+  public static String getActionFieldAtIndex(int actionIndex, Bundle notificationExtras, String actionFieldKeyTemplate, String defaultValue) {
     String actionFieldKey = actionFieldKeyTemplate.replace("*", String.valueOf(actionIndex));
     String actionFieldValue = notificationExtras.getString(actionFieldKey);
     if (actionFieldValue == null) {
-      return "";
+      return defaultValue;
     } else {
       return actionFieldValue;
     }

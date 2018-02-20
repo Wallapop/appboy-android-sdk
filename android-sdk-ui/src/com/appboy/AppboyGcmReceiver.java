@@ -43,6 +43,10 @@ public final class AppboyGcmReceiver extends BroadcastReceiver {
       AppboyNotificationUtils.handleCancelNotificationAction(context, intent);
     } else if (Constants.APPBOY_ACTION_CLICKED_ACTION.equals(action)) {
       AppboyNotificationActionUtils.handleNotificationActionClicked(context, intent);
+    } else if (Constants.APPBOY_STORY_TRAVERSE_CLICKED_ACTION.equals(action)) {
+      handleAppboyGcmReceiveIntent(context, intent);
+    } else if (Constants.APPBOY_STORY_CLICKED_ACTION.equals(action)) {
+      AppboyNotificationUtils.handlePushStoryPageClicked(context, intent);
     } else if (Constants.APPBOY_PUSH_CLICKED_ACTION.equals(action)) {
       AppboyNotificationUtils.handleNotificationOpened(context, intent);
     } else {
@@ -92,7 +96,7 @@ public final class AppboyGcmReceiver extends BroadcastReceiver {
   }
 
   /**
-   * Handles both Appboy data push GCM messages and notification messages. Notification messages are
+   * Handles both Braze data push GCM messages and notification messages. Notification messages are
    * posted to the notification center if the GCM message contains a title and body and the payload
    * is sent to the application via an Intent. Data push messages do not post to the notification
    * center, although the payload is forwarded to the application via an Intent as well.
@@ -124,6 +128,11 @@ public final class AppboyGcmReceiver extends BroadcastReceiver {
         AppboyConfigurationProvider appConfigurationProvider = new AppboyConfigurationProvider(context);
 
         IAppboyNotificationFactory appboyNotificationFactory = AppboyNotificationUtils.getActiveNotificationFactory();
+
+        if (gcmExtras.containsKey(Constants.APPBOY_PUSH_STORY_KEY) && !gcmExtras.containsKey(Constants.APPBOY_PUSH_STORY_IS_NEWLY_RECEIVED)) {
+          gcmExtras.putBoolean(Constants.APPBOY_PUSH_STORY_IS_NEWLY_RECEIVED, true);
+        }
+
         Notification notification = appboyNotificationFactory.createNotification(appConfigurationProvider, context, gcmExtras, appboyExtras);
 
         if (notification == null) {

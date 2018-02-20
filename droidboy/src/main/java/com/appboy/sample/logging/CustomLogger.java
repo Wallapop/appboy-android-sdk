@@ -10,6 +10,7 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
+
 import com.appboy.Appboy;
 import com.appboy.models.outgoing.AppboyProperties;
 import com.appboy.sample.R;
@@ -54,12 +55,8 @@ public abstract class CustomLogger extends DialogPreference {
     return mView;
   }
 
-  private void notifyResult(boolean result, String input) {
-    if (result) {
-      Toast.makeText(mContext, "Successfully logged " + input + ".", Toast.LENGTH_LONG).show();
-    } else {
-      Toast.makeText(mContext, "Failed to log " + input + ".", Toast.LENGTH_LONG).show();
-    }
+  private void notifyResult(String input) {
+    Toast.makeText(mContext, "Successfully submitted " + input + ".", Toast.LENGTH_LONG).show();
   }
 
   @Override
@@ -68,13 +65,13 @@ public abstract class CustomLogger extends DialogPreference {
     if (positiveResult) {
       String customName = mName.getText().toString();
       if (!StringUtils.isNullOrBlank(customName)) {
-        notifyResult(customLog(customName, mPropertyManager.getAppboyProperties()), customName);
+        notifyResult(customName);
       } else {
         Toast.makeText(mContext, "Must input a name", Toast.LENGTH_LONG).show();
       }
 
       // Flushing manually is not recommended in almost all production situations as
-      // Appboy automatically flushes data to its servers periodically. This call
+      // Braze automatically flushes data to its servers periodically. This call
       // is solely for testing purposes.
       if (mRequestFlush.isChecked()) {
         Appboy.getInstance(mContext).requestImmediateDataFlush();
@@ -82,5 +79,5 @@ public abstract class CustomLogger extends DialogPreference {
     }
   }
 
-  protected abstract boolean customLog(String name, AppboyProperties properties);
+  protected abstract void customLog(String name, AppboyProperties properties);
 }
